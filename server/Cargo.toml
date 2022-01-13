@@ -7,6 +7,12 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-rust-s3 = { version = "0.28.0", features = ["blocking"] }
-blake3 = "1.3.0"
-base64 = "0.13.0"
+rust-s3 = { version = "0.28", features = ["blocking"] }
+blake3 = "1.3"
+base64 = "0.13"
+actix-web = "4.0.0-beta.19"
+actix-multipart = "0.4.0-beta.12"
+futures-util = "0.3"
+tempfile = "3.3"
+tokio = { version = "1.15.0", features = ["fs"] }
+uuid = { version = "0.8.2", features = ["v4"] }

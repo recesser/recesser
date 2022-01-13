@@ -10,6 +10,7 @@ name = "cite"
 path = "src/main.rs"
 
 [dependencies]
-recesser-core = { version = "0.1.0", path = "../core" }
-clap = { version = "3.0.7", features = ["derive"] }
+recesser-core = { version = "0.1", path = "../core" }
 anyhow = "1.0"
+clap = { version = "3.0", features = ["derive"] }
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls-native-roots"] }

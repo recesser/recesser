@@ -1,12 +1,23 @@
 mod objectstorage;
+mod routes;
 
-use anyhow::Result;
-use objectstorage::Backend;
+use actix_web::{middleware, App, HttpServer};
 
-fn main() -> Result<()> {
-    let bucket = Backend::bucket("artifacts")?;
-    bucket.put_object_blocking("test_file", String::from("Hello").as_bytes())?;
-    let results = bucket.list_blocking(String::new(), None)?;
-    println!("{:?}", results[0].contents);
-    Ok(())
+use objectstorage::{Backend, Bucket};
+
+struct AppState {
+    bucket: Bucket,
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .app_data(AppState { bucket: Backend::bucket("artifacts").unwrap() })
+            .wrap(middleware::Logger::default())
+            .configure(routes::config)
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }

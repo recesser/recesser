@@ -1,7 +1,7 @@
 use anyhow::Result;
-use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
+pub use s3::bucket::Bucket;
 
 pub struct Backend {
     region: Region,
