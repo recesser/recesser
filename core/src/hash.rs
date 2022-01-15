@@ -1,13 +1,14 @@
 use std::fs::File;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::Path;
+use std::convert::AsRef;
 
 use anyhow::Result;
 use blake3::Hasher;
 
-const CAP: usize = 1024 * 128 * 35; // Should be multiple of 128KiB to use SIMD optimizations
+const CAP: usize = 1024 * 128 * 1; // Should be multiple of 128KiB to use SIMD optimizations
 
-pub fn hash_from_disk(filepath: PathBuf) -> Result<String> {
+pub fn hash_from_disk(filepath: impl AsRef<Path>) -> Result<String> {
     let mut file = File::open(filepath)?;
     let mut hasher = Hasher::new();
 
