@@ -1,15 +1,16 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
+use actix_files::NamedFile;
 use actix_multipart::{Field, Multipart};
 use actix_web::{get, post, web, Error, HttpResponse};
 use anyhow::Result;
 use futures_util::TryStreamExt;
-use recesser_core::hash::hash_from_disk;
+use recesser_core::hash::verify_integrity;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use uuid::Uuid;
 
 use crate::error::UserError;
+use crate::file;
 use crate::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -32,31 +33,36 @@ async fn upload(
             .unwrap();
 
         match field_name {
-            "object_id" => {
+            "artifact_id" => {
                 advertised_artifact_id = extract_artifact_id(&mut field)
                     .await
                     .map_err(|_| UserError::IntegrityError)?;
             }
             "file" => {
-                let mut path = ensure_tmp_dir().await?;
-                path.push(Uuid::new_v4().to_string());
+                let path = file::tempfile()?;
                 write_to_file(&path, &mut field)
                     .await
                     .map_err(|_| UserError::InternalError)?;
 
-                println!("Uploaded file at path {:?}", &path);
-                println!("File content: {}", fs::read_to_string(&path).await?);
+                let advertised_artifact_id = advertised_artifact_id
+                    .as_ref()
+                    .ok_or(UserError::IntegrityError)?;
+                let verified_artifact_id =
+                    verify_artifact_id(&path, advertised_artifact_id).await?;
 
-                let verified_artifact_id = verify_integrity(&advertised_artifact_id, &path)
-                    .await?;
+                app_state
+                    .database
+                    .lock()
+                    .unwrap()
+                    .set()
+                    .await
+                    .map_err(|_| UserError::InternalError)?;
 
                 app_state
                     .objstore
                     .upload_file(verified_artifact_id, &path)
                     .await
                     .map_err(|_| UserError::InternalError)?;
-
-                fs::remove_file(&path).await?;
             }
             _ => println!("Unknown field"),
         }
@@ -70,19 +76,7 @@ async fn extract_artifact_id(field: &mut Field) -> Result<Option<String>> {
     Ok(Some(advertised_artifact_id))
 }
 
-async fn ensure_tmp_dir() -> std::io::Result<PathBuf> {
-    let path = PathBuf::from("./tmp");
-    if !path.exists() {
-        fs::create_dir_all(&path).await?;
-    }
-    Ok(path)
-}
-
 async fn write_to_file(path: &Path, field: &mut Field) -> Result<()> {
-    if path.exists() {
-        fs::remove_file(&path).await?;
-    }
-
     let mut file = fs::File::create(&path).await?;
     while let Some(chunk) = field.try_next().await? {
         file.write_all(&chunk).await?;
@@ -90,23 +84,45 @@ async fn write_to_file(path: &Path, field: &mut Field) -> Result<()> {
     Ok(())
 }
 
-async fn verify_integrity(
-    advertised_artifact_id: &Option<String>,
-    path: impl AsRef<Path>,
-) -> std::result::Result<String, UserError> {
-    let determined_artifact_id = hash_from_disk(path).map_err(|_| UserError::IntegrityError)?;
-    let advertised_artifact_id = advertised_artifact_id.as_ref().ok_or(UserError::IntegrityError)?;
-    
-    println!("Advertised ID: {}", &advertised_artifact_id);
-    println!("Verified ID: {}", &determined_artifact_id);
-    
-    if determined_artifact_id.ne(advertised_artifact_id) {
-        return Err(UserError::IntegrityError);
-    }
-    Ok(determined_artifact_id)
+#[get("/artifacts/{id}")]
+async fn download(
+    artifact_id: web::Path<String>,
+    app_state: web::Data<AppState>,
+) -> Result<NamedFile, Error> {
+    let artifact_id = artifact_id.into_inner();
+
+    let path = app_state
+        .objstore
+        .download_file(&artifact_id)
+        .await
+        .map_err(|e| {
+            println!("{}", e);
+            UserError::InternalError
+        })?;
+
+    // let contents = fs::read_to_string(&path).await?;
+    // println!("Content of file at path: {:?}: {}", &path, &contents);
+    println!("Path: {:?}", &path);
+
+    verify_artifact_id(&path, &artifact_id).await?;
+
+    Ok(NamedFile::open_async(&path).await?)
 }
 
-#[get("/artifacts")]
-async fn download() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().into())
+async fn verify_artifact_id(
+    path: &Path,
+    advertised_artifact_id: &str,
+) -> std::result::Result<String, UserError> {
+    let copied_path = path.to_owned();
+    let copied_advertised_artifact_id = advertised_artifact_id.to_owned();
+    let verified_artifact_id = web::block(move || {
+        verify_integrity(copied_path, &copied_advertised_artifact_id)
+            .expect("Failed to verify integrity")
+    })
+    .await
+    .map_err(|e| {
+        println!("{}", e);
+        UserError::IntegrityError
+    })?;
+    Ok(verified_artifact_id)
 }

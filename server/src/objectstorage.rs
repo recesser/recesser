@@ -1,14 +1,17 @@
 use std::convert::AsRef;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
-use s3::bucket::Bucket;
 use tokio::fs;
 
+use crate::file;
+
+#[derive(Clone)]
 pub struct ObjectStorage {
-    client: Bucket
+    bucket: Bucket,
 }
 
 impl ObjectStorage {
@@ -23,23 +26,34 @@ impl ObjectStorage {
             None,
             None,
         )?;
-        let client = ObjectStorage {
-            client: Bucket::new_with_path_style("artifacts", region, credentials)?
+        let objectstorage = ObjectStorage {
+            bucket: Bucket::new_with_path_style("artifacts", region, credentials)?,
         };
-        Ok(client)
+        Ok(objectstorage)
     }
 
-    pub async fn upload(&self, artifact_id: &str, data: &[u8]) -> Result<()> {
-        let (_, code) = self.client.put_object(artifact_id, data).await?;
-        println!("{}", code);
-        Ok(())
-    }
-
-    pub async fn upload_file(&self, artifact_id: impl AsRef<str>, path: impl AsRef<Path>) -> Result<()> {
+    pub async fn upload_file(
+        &self,
+        artifact_id: impl AsRef<str>,
+        path: impl AsRef<Path>,
+    ) -> Result<()> {
         let mut file = fs::File::open(path).await?;
-        let code = self.client.put_object_stream(&mut file, artifact_id).await?;
-        println!("{}", code);
+        let code = self
+            .bucket
+            .put_object_stream(&mut file, artifact_id)
+            .await?;
+        println!("Received minio code: {}", code);
         Ok(())
     }
 
+    pub async fn download_file(&self, artifact_id: impl AsRef<str>) -> Result<PathBuf> {
+        let path = file::tempfile()?;
+        let mut file = fs::File::create(&path).await?;
+        let code = self
+            .bucket
+            .get_object_stream(&artifact_id, &mut file)
+            .await?;
+        println!("Received minio code: {}", code);
+        Ok(path)
+    }
 }
