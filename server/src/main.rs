@@ -3,6 +3,7 @@ mod error;
 mod file;
 mod objectstorage;
 mod routes;
+mod settings;
 
 use std::sync::Mutex;
 

@@ -6,6 +6,7 @@ use actix_web::{get, post, web, Error, HttpResponse};
 use anyhow::Result;
 use futures_util::TryStreamExt;
 use recesser_core::hash::verify_integrity;
+use recesser_core::metadata::Metadata;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
@@ -22,7 +23,7 @@ async fn upload(
     mut payload: Multipart,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let mut advertised_artifact_id: Option<String> = None;
+    let mut metadata: Option<Metadata> = None;
 
     while let Some(mut field) = payload.try_next().await? {
         let content_disposition = field.content_disposition();
@@ -33,47 +34,54 @@ async fn upload(
             .unwrap();
 
         match field_name {
-            "artifact_id" => {
-                advertised_artifact_id = extract_artifact_id(&mut field)
-                    .await
-                    .map_err(|_| UserError::IntegrityError)?;
+            "metadata" => {
+                metadata = extract_metadata(&mut field).await.map_err(|e| {
+                    log::debug!("{}", e);
+                    UserError::IntegrityError
+                })?;
+                log::trace!("Extracted metadata: {:?}", &metadata);
             }
             "file" => {
-                let path = file::tempfile()?;
-                write_to_file(&path, &mut field)
-                    .await
-                    .map_err(|_| UserError::InternalError)?;
+                let metadata = metadata.as_ref().ok_or(UserError::IntegrityError)?;
 
-                let advertised_artifact_id = advertised_artifact_id
-                    .as_ref()
-                    .ok_or(UserError::IntegrityError)?;
-                let verified_artifact_id =
-                    verify_artifact_id(&path, advertised_artifact_id).await?;
+                let path = file::tempfile()?;
+                write_to_file(&path, &mut field).await.map_err(|e| {
+                    log::debug!("{}", e);
+                    UserError::IntegrityError
+                })?;
+
+                let verified_artifact_id = verify_artifact_id(&path, &metadata.artifact_id).await?;
 
                 app_state
                     .database
                     .lock()
                     .unwrap()
-                    .set()
+                    .set(&metadata.artifact_id, &metadata)
                     .await
-                    .map_err(|_| UserError::InternalError)?;
+                    .map_err(|e| {
+                        log::debug!("{}", e);
+                        UserError::IntegrityError
+                    })?;
 
                 app_state
                     .objstore
                     .upload_file(verified_artifact_id, &path)
                     .await
-                    .map_err(|_| UserError::InternalError)?;
+                    .map_err(|e| {
+                        log::debug!("{}", e);
+                        UserError::IntegrityError
+                    })?;
             }
-            _ => println!("Unknown field"),
+            _ => log::error!("Unknown field"),
         }
     }
     Ok(HttpResponse::Ok().into())
 }
 
-async fn extract_artifact_id(field: &mut Field) -> Result<Option<String>> {
+async fn extract_metadata(field: &mut Field) -> Result<Option<Metadata>> {
     let buf: Vec<web::Bytes> = field.try_collect().await?;
-    let advertised_artifact_id = String::from_utf8(buf.concat())?;
-    Ok(Some(advertised_artifact_id))
+    let metadata: Metadata = serde_json::from_slice(&buf.concat())?;
+    Ok(Some(metadata))
 }
 
 async fn write_to_file(path: &Path, field: &mut Field) -> Result<()> {
@@ -96,13 +104,11 @@ async fn download(
         .download_file(&artifact_id)
         .await
         .map_err(|e| {
-            println!("{}", e);
+            log::debug!("{}", e);
             UserError::InternalError
         })?;
 
-    // let contents = fs::read_to_string(&path).await?;
-    // println!("Content of file at path: {:?}: {}", &path, &contents);
-    println!("Path: {:?}", &path);
+    log::trace!("Uploaded file path: {:?}", &path);
 
     verify_artifact_id(&path, &artifact_id).await?;
 
@@ -121,7 +127,7 @@ async fn verify_artifact_id(
     })
     .await
     .map_err(|e| {
-        println!("{}", e);
+        log::debug!("{}", e);
         UserError::IntegrityError
     })?;
     Ok(verified_artifact_id)

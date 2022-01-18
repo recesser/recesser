@@ -7,14 +7,18 @@ edition = "2021"
 
 [dependencies]
 recesser-core = { version = "0.1", path = "../core" }
-anyhow = "1.0"
-thiserror = "1.0"
-rust-s3 = "0.28"
 actix-web = "4.0.0-beta.20"
 actix-multipart = "0.4.0-beta.12"
 actix-files = "0.6.0-beta.14"
-futures-util = "0.3"
-tempfile = "3.3"
 tokio = { version = "1.15", features = ["fs"] }
+futures-util = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 redis = { version = "0.21", features = ["tokio-comp"] }
+rust-s3 = "0.28"
+anyhow = "1.0"
+thiserror = "1.0"
+tempfile = "3.3"
 env_logger = "0.9"
+log = "0.4"
+config = "0.11"

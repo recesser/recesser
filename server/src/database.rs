@@ -1,5 +1,5 @@
 use anyhow::Result;
-use redis::AsyncCommands;
+use serde::Serialize;
 
 #[derive(Clone)]
 pub struct Database {
@@ -15,8 +15,21 @@ impl Database {
         Ok(database)
     }
 
-    pub async fn set(&mut self) -> Result<()> {
-        self.connection.set("my_key", "hellow").await?;
+    pub async fn set(&mut self, key: &str, value: &impl Serialize) -> Result<()> {
+        redis::cmd("JSON.SET")
+            .arg(key)
+            .arg(".")
+            .arg(serde_json::to_string(value)?)
+            .query_async(&mut self.connection)
+            .await?;
         Ok(())
+    }
+
+    pub async fn get(&mut self, key: &str) -> Result<()> {
+        let result: String = redis::cmd("JSON.GET")
+            .arg(key)
+            .query_async(&mut self.connection)
+            .await?;
+        Ok(serde_json::from_str(&result)?)
     }
 }
