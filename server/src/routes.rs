@@ -39,7 +39,7 @@ async fn upload(
                     log::debug!("{}", e);
                     UserError::IntegrityError
                 })?;
-                log::trace!("Extracted metadata: {:?}", &metadata);
+                log::debug!("Extracted metadata: {:?}", &metadata);
             }
             "file" => {
                 let metadata = metadata.as_ref().ok_or(UserError::IntegrityError)?;

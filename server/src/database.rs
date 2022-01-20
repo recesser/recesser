@@ -7,11 +7,12 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn new() -> Result<Self> {
-        let client = redis::Client::open("redis://127.0.0.1/")?;
+    pub async fn new(addr: &str) -> Result<Self> {
+        let client = redis::Client::open(addr)?;
         let database = Database {
             connection: client.get_multiplexed_tokio_connection().await?,
         };
+        log::info!("Connected to database at: {}", addr);
         Ok(database)
     }
 

@@ -1,4 +1,4 @@
-use actix_web::{error, http::header, http::StatusCode, HttpResponse, HttpResponseBuilder};
+use actix_web::{http, HttpResponse, HttpResponseBuilder};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -9,16 +9,16 @@ pub enum UserError {
     IntegrityError,
 }
 
-impl error::ResponseError for UserError {
+impl actix_web::error::ResponseError for UserError {
     fn error_response(&self) -> HttpResponse {
         HttpResponseBuilder::new(self.status_code())
-            .insert_header(header::ContentType::plaintext())
+            .insert_header(http::header::ContentType::plaintext())
             .body(self.to_string())
     }
-    fn status_code(&self) -> StatusCode {
+    fn status_code(&self) -> http::StatusCode {
         match *self {
-            UserError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            UserError::IntegrityError => StatusCode::BAD_REQUEST,
+            UserError::InternalError => http::StatusCode::INTERNAL_SERVER_ERROR,
+            UserError::IntegrityError => http::StatusCode::BAD_REQUEST,
         }
     }
 }

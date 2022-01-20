@@ -11,25 +11,30 @@ use actix_web::{middleware, web, App, HttpServer};
 
 use database::Database;
 use objectstorage::ObjectStorage;
+use settings::Settings;
 
 struct AppState {
     objstore: ObjectStorage,
     database: Mutex<Database>,
 }
 
-impl AppState {
-    async fn new() -> Self {
-        AppState {
-            objstore: ObjectStorage::new().unwrap(),
-            database: Mutex::new(Database::new().await.unwrap()),
-        }
-    }
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
-    let app_state = web::Data::new(AppState::new().await);
+    let s = Settings::new().expect("Failed to initialize settings");
+
+    env_logger::Builder::new()
+        .parse_filters(&s.log_level)
+        .init();
+
+    let app_state = web::Data::new(AppState {
+        objstore: ObjectStorage::new(&s.objectstorage_addr)
+            .expect("Failed to connect to objectstorage"),
+        database: Mutex::new(
+            Database::new(&s.database_addr)
+                .await
+                .expect("Failed to connect to database"),
+        ),
+    });
 
     HttpServer::new(move || {
         App::new()
@@ -37,7 +42,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .configure(routes::config)
     })
-    .bind("127.0.0.1:8080")?
+    .bind(&s.addr)?
     .run()
     .await
 }

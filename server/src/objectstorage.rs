@@ -15,10 +15,10 @@ pub struct ObjectStorage {
 }
 
 impl ObjectStorage {
-    pub fn new() -> Result<Self> {
+    pub fn new(addr: &str) -> Result<Self> {
         let region = Region::Custom {
             region: String::new(),
-            endpoint: String::from("http://127.0.0.1:9000"),
+            endpoint: String::from(addr),
         };
         let credentials = Credentials::from_env_specific(
             Some("AWS_ACCESS_KEY_ID"),
