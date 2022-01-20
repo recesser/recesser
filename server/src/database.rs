@@ -1,6 +1,16 @@
 use anyhow::Result;
 use serde::Serialize;
 
+use recesser_core::metadata::Metadata;
+
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+#[error("Key {content_address} doesn't exist.")]
+pub struct KeyNotFoundError {
+    pub content_address: String,
+}
+
 #[derive(Clone)]
 pub struct Database {
     connection: redis::aio::MultiplexedConnection,
@@ -26,11 +36,14 @@ impl Database {
         Ok(())
     }
 
-    pub async fn get(&mut self, key: &str) -> Result<()> {
-        let result: String = redis::cmd("JSON.GET")
+    pub async fn get(&mut self, key: &str) -> Result<Metadata> {
+        let result: Option<String> = redis::cmd("JSON.GET")
             .arg(key)
             .query_async(&mut self.connection)
             .await?;
+        let result = result.ok_or(KeyNotFoundError {
+            content_address: String::from(key),
+        })?;
         Ok(serde_json::from_str(&result)?)
     }
 }

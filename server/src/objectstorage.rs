@@ -34,24 +34,24 @@ impl ObjectStorage {
 
     pub async fn upload_file(
         &self,
-        artifact_id: impl AsRef<str>,
-        path: impl AsRef<Path>,
+        content_address: impl AsRef<str>,
+        file_path: impl AsRef<Path>,
     ) -> Result<()> {
-        let mut file = fs::File::open(path).await?;
+        let mut file = fs::File::open(file_path).await?;
         let code = self
             .bucket
-            .put_object_stream(&mut file, artifact_id)
+            .put_object_stream(&mut file, content_address)
             .await?;
         println!("Received minio code: {}", code);
         Ok(())
     }
 
-    pub async fn download_file(&self, artifact_id: impl AsRef<str>) -> Result<PathBuf> {
+    pub async fn download_file(&self, content_address: impl AsRef<str>) -> Result<PathBuf> {
         let path = file::tempfile()?;
         let mut file = fs::File::create(&path).await?;
         let code = self
             .bucket
-            .get_object_stream(&artifact_id, &mut file)
+            .get_object_stream(content_address, &mut file)
             .await?;
         println!("Received minio code: {}", code);
         Ok(path)

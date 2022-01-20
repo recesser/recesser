@@ -1,15 +1,12 @@
-use chrono::{Local, NaiveDateTime};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Metadata {
-    pub artifact_id: String,
-    pub name: Option<String>,
+    pub file_content_address: String,
     pub created: Option<NaiveDateTime>,
-}
-
-impl Metadata {
-    pub fn update(&mut self) {
-        self.created = Some(Local::now().naive_local());
-    }
+    pub file_created: Option<NaiveDateTime>,
+    pub name: Option<String>,
+    pub custom: Option<serde_json::Value>,
 }
