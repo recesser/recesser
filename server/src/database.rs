@@ -6,9 +6,9 @@ use recesser_core::metadata::Metadata;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-#[error("Key {content_address} doesn't exist.")]
+#[error("Key {key} doesn't exist.")]
 pub struct KeyNotFoundError {
-    pub content_address: String,
+    pub key: String,
 }
 
 #[derive(Clone)]
@@ -42,8 +42,22 @@ impl Database {
             .query_async(&mut self.connection)
             .await?;
         let result = result.ok_or(KeyNotFoundError {
-            content_address: String::from(key),
+            key: String::from(key),
         })?;
         Ok(serde_json::from_str(&result)?)
+    }
+
+    pub async fn delete(&mut self, key: &str) -> Result<i32> {
+        let result: i32 = redis::cmd("JSON.DEL")
+            .arg(key)
+            .query_async(&mut self.connection)
+            .await?;
+        if result <= 0 {
+            return Err(KeyNotFoundError {
+                key: String::from(key),
+            }
+            .into());
+        }
+        Ok(result)
     }
 }

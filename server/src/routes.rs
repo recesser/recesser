@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use actix_files::NamedFile;
 use actix_multipart::{Field, Multipart};
-use actix_web::{get, post, web, Error, HttpResponse};
+use actix_web::{delete, get, post, web, Error, HttpResponse};
 use anyhow::Result;
 use futures_util::TryStreamExt;
 use recesser_core::hash::{verify_file_integrity, verify_integrity};
@@ -141,7 +141,7 @@ async fn download(
         .await
         .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
             Ok(err) => UserError::NotFound {
-                path: format!("artifacts/{}", err.content_address),
+                path: format!("artifacts/{}", err.key),
             },
             _ => UserError::Internal,
         })?;
@@ -157,4 +157,29 @@ async fn download(
     verify_file(&path, &content_address).await?;
 
     Ok(NamedFile::open_async(&path).await?)
+}
+
+#[delete("/artifacts/{content_address}")]
+async fn delete(
+    content_address: web::Path<String>,
+    app_state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let content_address = content_address.into_inner();
+
+    app_state
+        .database
+        .lock()
+        .expect("Failed to lock mutex on database connection.")
+        .delete(&content_address)
+        .await
+        .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
+            Ok(err) => UserError::NotFound {
+                path: format!("artifacts/{}", err.key),
+            },
+            _ => UserError::Internal,
+        })?;
+
+    // TODO: Implement garbage collection of objects in objectstorage
+
+    Ok(HttpResponse::Ok().into())
 }
