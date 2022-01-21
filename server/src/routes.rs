@@ -43,9 +43,9 @@ async fn upload(
                 let content_address = content_address.as_ref().ok_or(UserError::BadRequest)?;
                 log::debug!("Extracted content-address: {content_address}");
 
-                metadata = extract_and_verify_metadata(&mut field, content_address)
-                    .await
-                    .map_err(UserError::bad_request)?;
+                let buf = field.try_collect::<Vec<web::Bytes>>().await?.concat();
+                verify(&buf, content_address).await?;
+                metadata = Some(serde_json::from_slice(&buf).map_err(|_| UserError::BadRequest)?);
             }
             "file" => {
                 let content_address = content_address.as_ref().ok_or(UserError::BadRequest)?;
@@ -82,15 +82,6 @@ async fn upload(
 async fn extract_string(field: &mut Field) -> Result<Option<String>> {
     let buf = field.try_collect::<Vec<web::Bytes>>().await?.concat();
     Ok(Some(String::from_utf8(buf)?))
-}
-
-async fn extract_and_verify_metadata(
-    field: &mut Field,
-    content_address: &str,
-) -> Result<Option<Metadata>> {
-    let buf = field.try_collect::<Vec<web::Bytes>>().await?.concat();
-    verify(&buf, content_address).await?;
-    Ok(Some(serde_json::from_slice(&buf)?))
 }
 
 async fn write_to_file(field: &mut Field) -> Result<PathBuf> {
@@ -157,6 +148,19 @@ async fn download(
     verify_file(&path, &content_address).await?;
 
     Ok(NamedFile::open_async(&path).await?)
+}
+
+#[get("/artifacts")]
+async fn list(app_state: web::Data<AppState>) -> Result<web::Json<Vec<Metadata>>, Error> {
+    let artifacts = app_state
+        .database
+        .lock()
+        .expect("Failed to lock mutex on database connection.")
+        .get_all()
+        .await
+        .map_err(UserError::internal)?;
+
+    Ok(web::Json(artifacts))
 }
 
 #[delete("/artifacts/{content_address}")]

@@ -1,8 +1,6 @@
 use anyhow::Result;
-use serde::Serialize;
-
 use recesser_core::metadata::Metadata;
-
+use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -44,7 +42,24 @@ impl Database {
         let result = result.ok_or(KeyNotFoundError {
             key: String::from(key),
         })?;
-        Ok(serde_json::from_str(&result)?)
+        deserialize(&result)
+    }
+
+    pub async fn get_all(&mut self) -> Result<Vec<Metadata>> {
+        let keys = self.keys().await?;
+        let result: Vec<String> = redis::cmd("JSON.MGET")
+            .arg(&keys)
+            .query_async(&mut self.connection)
+            .await?;
+        Ok(result.iter().filter_map(|r| deserialize(r).ok()).collect())
+    }
+
+    async fn keys(&mut self) -> Result<Vec<String>> {
+        let result: Vec<String> = redis::cmd("KEYS")
+            .arg("*")
+            .query_async(&mut self.connection)
+            .await?;
+        Ok(result)
     }
 
     pub async fn delete(&mut self, key: &str) -> Result<i32> {
@@ -60,4 +75,8 @@ impl Database {
         }
         Ok(result)
     }
+}
+
+fn deserialize(buf: &str) -> Result<Metadata> {
+    Ok(serde_json::from_str(buf)?)
 }
