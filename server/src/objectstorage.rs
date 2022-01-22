@@ -7,7 +7,7 @@ use s3::creds::Credentials;
 use s3::region::Region;
 use tokio::fs;
 
-use crate::file;
+use crate::filesystem::tempfile;
 
 #[derive(Clone)]
 pub struct ObjectStorage {
@@ -47,7 +47,7 @@ impl ObjectStorage {
     }
 
     pub async fn download_file(&self, content_address: impl AsRef<str>) -> Result<PathBuf> {
-        let path = file::tempfile()?;
+        let path = tempfile()?;
         let mut file = fs::File::create(&path).await?;
         let code = self
             .bucket

@@ -1,6 +1,6 @@
 mod database;
 mod error;
-mod file;
+mod filesystem;
 mod objectstorage;
 mod routes;
 mod settings;
@@ -40,7 +40,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(app_state.clone())
             .wrap(middleware::Logger::default())
-            .configure(routes::config)
+            .service(web::scope("/artifacts").configure(routes::config))
     })
     .bind(&s.addr)?
     .run()
