@@ -42,7 +42,7 @@ impl ObjectStorage {
             .bucket
             .put_object_stream(&mut file, content_address)
             .await?;
-        println!("Received minio code: {}", code);
+        log::debug!("Received minio code: {code}");
         Ok(())
     }
 
@@ -53,7 +53,20 @@ impl ObjectStorage {
             .bucket
             .get_object_stream(content_address, &mut file)
             .await?;
-        println!("Received minio code: {}", code);
+        log::debug!("Received minio code: {code}");
         Ok(path)
+    }
+
+    // pub async fn list(&self) -> Result<Vec<String>> {
+    //     let results = self.bucket.list(String::from(""), None).await?;
+    //     let artifacts: Vec<String> = results.iter().map(|i| String::from(&i.name)).collect();
+    //     Ok(artifacts)
+    // }
+
+    pub async fn exists(&self, content_address: impl AsRef<str>) -> Result<bool> {
+        let (_, code) = self.bucket.head_object(content_address).await?;
+        log::debug!("Received minio code: {code}");
+        let exists = !matches!(code, 404);
+        Ok(exists)
     }
 }

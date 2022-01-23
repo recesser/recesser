@@ -46,24 +46,26 @@ async fn upload(
                 let metadata = metadata.as_ref().ok_or(UserError::BadRequest)?;
                 log::debug!("Extracted metadata: \n{metadata:#?}");
 
-                let file_path = write_to_file(&mut field)
+                let file_exists = app_state
+                    .objstore
+                    .exists(&metadata.file_content_address)
                     .await
                     .map_err(UserError::internal)?;
 
-                let verified_file_content_address =
-                    verify_file(&file_path, &metadata.file_content_address).await?;
+                if file_exists {
+                    log::debug!("File already exist in object storage. Skipping upload.");
+                } else {
+                    log::debug!("File doesn't exist in object storage. Uploading it.");
+                    upload_file(&mut field, metadata, &app_state)
+                        .await
+                        .map_err(UserError::internal)?
+                }
 
                 app_state
                     .database
                     .lock()
                     .expect("Failed to lock mutex on database connection.")
                     .set(content_address, &metadata)
-                    .await
-                    .map_err(UserError::internal)?;
-
-                app_state
-                    .objstore
-                    .upload_file(&verified_file_content_address, &file_path)
                     .await
                     .map_err(UserError::internal)?;
             }
@@ -76,6 +78,23 @@ async fn upload(
 async fn extract_string(field: &mut Field) -> Result<Option<String>> {
     let buf = field.try_collect::<Vec<web::Bytes>>().await?.concat();
     Ok(Some(String::from_utf8(buf)?))
+}
+
+async fn upload_file(
+    field: &mut Field,
+    metadata: &Metadata,
+    app_state: &web::Data<AppState>,
+) -> Result<()> {
+    let file_path = write_to_file(field).await?;
+
+    let verified_file_content_address =
+        verify_file(&file_path, &metadata.file_content_address).await?;
+
+    app_state
+        .objstore
+        .upload_file(&verified_file_content_address, &file_path)
+        .await?;
+    Ok(())
 }
 
 async fn write_to_file(field: &mut Field) -> Result<PathBuf> {

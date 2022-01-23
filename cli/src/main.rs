@@ -78,8 +78,8 @@ fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) ->
     log::debug!("Metadata: {metadata:#?}");
 
     let content_address = hash(&serde_json::to_vec(&metadata)?);
-    println!("{content_address}");
     g.http.upload(&content_address, metadata, filepath)?;
+    println!("{content_address}");
 
     Ok(())
 }
