@@ -32,7 +32,7 @@ struct Global {
 
 impl Cli {
     fn call(self) -> Result<()> {
-        let s = Settings::new()?;
+        let s = Settings::new(&self.config)?;
 
         env_logger::Builder::new()
             .filter(

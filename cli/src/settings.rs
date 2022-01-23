@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
@@ -7,12 +9,16 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn new() -> std::result::Result<Self, ConfigError> {
+    pub fn new(filepath: &Option<PathBuf>) -> std::result::Result<Self, ConfigError> {
         let mut settings = Config::new();
 
         settings.set_default("addr", "http://recesser-server.recesser")?;
 
-        settings.merge(File::with_name("config.toml").required(false))?;
+        let filepath = match filepath {
+            Some(path) => path,
+            None => Path::new("recesser.toml"),
+        };
+        settings.merge(File::from(filepath).required(false))?;
         settings.merge(Environment::with_prefix("recesser"))?;
 
         settings.try_into()
