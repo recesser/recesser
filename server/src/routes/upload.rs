@@ -13,7 +13,7 @@ use crate::error::UserError;
 use crate::filesystem::tempfile;
 use crate::AppState;
 
-#[post("/")]
+#[post("")]
 async fn upload(
     mut payload: Multipart,
     app_state: web::Data<AppState>,
@@ -67,7 +67,7 @@ async fn upload(
                     .await
                     .map_err(UserError::internal)?;
             }
-            _ => log::error!("Unknown field"),
+            _ => log::error!("Unknown field: {field_name}"),
         }
     }
     Ok(HttpResponse::Ok().into())

@@ -19,7 +19,7 @@ impl Client {
 
     pub fn upload(&self, content_address: &str, metadata: Metadata, filepath: &Path) -> Result<()> {
         let form = multipart::Form::new()
-            .text("content_address", String::from(content_address))
+            .text("content-address", String::from(content_address))
             .text("metadata", serde_json::to_string(&metadata)?)
             .file("file", filepath)?;
 
@@ -29,7 +29,7 @@ impl Client {
             .multipart(form)
             .send()?;
 
-        println!("Received response: {resp:?}");
+        log::debug!("Received response: {resp:#?}");
 
         Ok(())
     }

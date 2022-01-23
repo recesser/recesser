@@ -3,6 +3,7 @@ mod parser;
 mod settings;
 
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 
@@ -32,9 +33,22 @@ struct Global {
 impl Cli {
     fn call(self) -> Result<()> {
         let s = Settings::new()?;
+
+        env_logger::Builder::new()
+            .filter(
+                None,
+                match self.verbose {
+                    true => log::LevelFilter::Debug,
+                    false => log::LevelFilter::Info,
+                },
+            )
+            .format(|buf, record| writeln!(buf, "{}", record.args()))
+            .init();
+
         let global = Global {
             http: Client::new(&s.addr),
         };
+
         match self.commands {
             Commands::Hash { file } => hash_command(file)?,
             Commands::Upload { file, metadata } => upload_command(global, &file, metadata)?,
@@ -52,6 +66,7 @@ fn hash_command(filepath: PathBuf) -> Result<()> {
 
 fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) -> Result<()> {
     let file_content_address = hash_from_disk(filepath)?;
+    log::debug!("File content address: {file_content_address}");
 
     let custom_metadata = metadata_path.map(read_custom_metadata).transpose()?;
     let metadata = Metadata {
@@ -60,9 +75,10 @@ fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) ->
         file_created: Some(file_modified(filepath)?),
         custom: custom_metadata,
     };
+    log::debug!("Metadata: {metadata:#?}");
 
     let content_address = hash(&serde_json::to_vec(&metadata)?);
-    println!("Content address: {content_address}");
+    println!("{content_address}");
     g.http.upload(&content_address, metadata, filepath)?;
 
     Ok(())

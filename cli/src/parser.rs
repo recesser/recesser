@@ -5,6 +5,12 @@ use clap::{Parser, Subcommand};
 #[derive(Parser, Debug)]
 #[clap(name = "rcssr", version)]
 pub struct Cli {
+    /// Path to config file
+    #[clap(long)]
+    pub config: Option<PathBuf>,
+    /// Print verbose output
+    #[clap(short, long)]
+    pub verbose: bool,
     #[clap(subcommand)]
     pub commands: Commands,
 }

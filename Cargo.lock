@@ -1675,6 +1675,8 @@ dependencies = [
  "chrono",
  "clap",
  "config",
+ "env_logger",
+ "log",
  "recesser-core",
  "reqwest",
  "serde 1.0.133",
