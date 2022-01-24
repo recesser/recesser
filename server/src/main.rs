@@ -5,8 +5,6 @@ mod objectstorage;
 mod routes;
 mod settings;
 
-use std::sync::Mutex;
-
 use actix_web::{middleware, web, App, HttpServer};
 
 use database::Database;
@@ -15,7 +13,7 @@ use settings::Settings;
 
 struct AppState {
     objstore: ObjectStorage,
-    database: Mutex<Database>,
+    database: Database,
 }
 
 #[actix_web::main]
@@ -29,11 +27,9 @@ async fn main() -> std::io::Result<()> {
     let app_state = web::Data::new(AppState {
         objstore: ObjectStorage::new(&s.objectstorage_addr)
             .expect("Failed to connect to objectstorage"),
-        database: Mutex::new(
-            Database::new(&s.database_addr)
-                .await
-                .expect("Failed to connect to database"),
-        ),
+        database: Database::new(&s.database_addr)
+            .await
+            .expect("Failed to connect to database"),
     });
 
     HttpServer::new(move || {

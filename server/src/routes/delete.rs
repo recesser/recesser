@@ -13,8 +13,6 @@ async fn delete(
 
     app_state
         .database
-        .lock()
-        .expect("Failed to lock mutex on database connection.")
         .delete(&content_address)
         .await
         .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
@@ -26,5 +24,5 @@ async fn delete(
 
     // TODO: Implement garbage collection of objects in objectstorage
 
-    Ok(HttpResponse::Ok().into())
+    Ok(HttpResponse::Accepted().into())
 }

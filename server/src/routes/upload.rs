@@ -63,8 +63,6 @@ async fn upload(
 
                 app_state
                     .database
-                    .lock()
-                    .expect("Failed to lock mutex on database connection.")
                     .set(content_address, &metadata)
                     .await
                     .map_err(UserError::internal)?;

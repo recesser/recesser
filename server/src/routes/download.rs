@@ -15,8 +15,6 @@ async fn download(
 
     let metadata = app_state
         .database
-        .lock()
-        .expect("Failed to lock mutex on database connection.")
         .get(&content_address)
         .await
         .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {

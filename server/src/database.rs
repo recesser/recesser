@@ -24,20 +24,22 @@ impl Database {
         Ok(database)
     }
 
-    pub async fn set(&mut self, key: &str, value: &impl Serialize) -> Result<()> {
+    pub async fn set(&self, key: &str, value: &impl Serialize) -> Result<()> {
+        let mut connection = self.connection.clone();
         redis::cmd("JSON.SET")
             .arg(key)
             .arg(".")
             .arg(serde_json::to_string(value)?)
-            .query_async(&mut self.connection)
+            .query_async(&mut connection)
             .await?;
         Ok(())
     }
 
-    pub async fn get(&mut self, key: &str) -> Result<Metadata> {
+    pub async fn get(&self, key: &str) -> Result<Metadata> {
+        let mut connection = self.connection.clone();
         let result: Option<String> = redis::cmd("JSON.GET")
             .arg(key)
-            .query_async(&mut self.connection)
+            .query_async(&mut connection)
             .await?;
         let result = result.ok_or(KeyNotFoundError {
             key: String::from(key),
@@ -45,27 +47,30 @@ impl Database {
         deserialize(&result)
     }
 
-    pub async fn get_all(&mut self) -> Result<Vec<Metadata>> {
+    pub async fn get_all(&self) -> Result<Vec<Metadata>> {
+        let mut connection = self.connection.clone();
         let keys = self.keys().await?;
         let result: Vec<String> = redis::cmd("JSON.MGET")
             .arg(&keys)
-            .query_async(&mut self.connection)
+            .query_async(&mut connection)
             .await?;
         Ok(result.iter().filter_map(|r| deserialize(r).ok()).collect())
     }
 
-    async fn keys(&mut self) -> Result<Vec<String>> {
+    async fn keys(&self) -> Result<Vec<String>> {
+        let mut connection = self.connection.clone();
         let result: Vec<String> = redis::cmd("KEYS")
             .arg("*")
-            .query_async(&mut self.connection)
+            .query_async(&mut connection)
             .await?;
         Ok(result)
     }
 
-    pub async fn delete(&mut self, key: &str) -> Result<i32> {
+    pub async fn delete(&self, key: &str) -> Result<i32> {
+        let mut connection = self.connection.clone();
         let result: i32 = redis::cmd("JSON.DEL")
             .arg(key)
-            .query_async(&mut self.connection)
+            .query_async(&mut connection)
             .await?;
         if result <= 0 {
             return Err(KeyNotFoundError {
