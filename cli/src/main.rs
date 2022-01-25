@@ -12,6 +12,7 @@ use chrono::{Local, NaiveDateTime};
 use clap::Parser;
 use recesser_core::hash::{hash, hash_from_disk};
 use recesser_core::metadata::Metadata;
+use reqwest::StatusCode;
 
 use http::Client;
 use parser::{Cli, Commands};
@@ -52,6 +53,8 @@ impl Cli {
         match self.commands {
             Commands::Hash { file } => hash_command(file)?,
             Commands::Upload { file, metadata } => upload_command(global, &file, metadata)?,
+            Commands::Delete { handle } => delete_command(global, &handle)?,
+            Commands::List {} => list_command(global)?,
             _ => println!("Not implemented"),
         };
         Ok(())
@@ -93,4 +96,23 @@ fn file_modified(filepath: &Path) -> Result<NaiveDateTime> {
 fn read_custom_metadata(filepath: PathBuf) -> Result<serde_json::Value> {
     let file = fs::File::open(filepath)?;
     Ok(serde_json::from_reader(file)?)
+}
+
+fn delete_command(g: Global, handle: &str) -> Result<()> {
+    let resp = g.http.delete(handle)?;
+    match resp.status() {
+        StatusCode::ACCEPTED => println!("Successfully deleted artifact {handle}"),
+        StatusCode::NOT_FOUND => println!("Artifact {handle} doesn't exist."),
+        _ => println!("Internal error: {resp:?}"),
+    }
+    Ok(())
+}
+
+fn list_command(g: Global) -> Result<()> {
+    let resp = g.http.list()?;
+    let list: Vec<String> = serde_json::from_slice(&resp.bytes()?)?;
+    for handle in list {
+        println!("{handle}");
+    }
+    Ok(())
 }

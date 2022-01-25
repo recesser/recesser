@@ -66,7 +66,13 @@ impl ObjectStorage {
     pub async fn exists(&self, content_address: impl AsRef<str>) -> Result<bool> {
         let (_, code) = self.bucket.head_object(content_address).await?;
         log::debug!("Received minio code: {code}");
-        let exists = !matches!(code, 404);
-        Ok(exists)
+        Ok(!matches!(code, 404))
+    }
+
+    pub async fn delete(&self, content_address: &str) -> Result<()> {
+        log::debug!("File content address for deletion {content_address}");
+        let (_, code) = self.bucket.delete_object(content_address).await?;
+        log::debug!("Received minio code: {code}");
+        Ok(())
     }
 }

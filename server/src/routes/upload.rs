@@ -18,6 +18,8 @@ async fn upload(
     mut payload: Multipart,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
+    let mut db = app_state.database.clone();
+
     let mut content_address: Option<String> = None;
     let mut metadata: Option<Metadata> = None;
 
@@ -61,9 +63,7 @@ async fn upload(
                         .map_err(UserError::internal)?
                 }
 
-                app_state
-                    .database
-                    .set(content_address, &metadata)
+                db.set(content_address, &metadata)
                     .await
                     .map_err(UserError::internal)?;
             }

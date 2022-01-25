@@ -11,18 +11,41 @@ async fn delete(
 ) -> Result<HttpResponse, Error> {
     let content_address = content_address.into_inner();
 
-    app_state
-        .database
-        .delete(&content_address)
+    let mut db = app_state.database.clone();
+
+    let file_content_address = db
+        .get(&content_address)
         .await
         .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
-            Ok(err) => UserError::NotFound {
-                path: format!("artifacts/{}", err.key),
-            },
-            _ => UserError::Internal,
-        })?;
+            Ok(e) => UserError::not_found(&format!("artifacts/{}", &e.key), e),
+            Err(e) => UserError::internal(e),
+        })?
+        .file_content_address;
 
-    // TODO: Implement garbage collection of objects in objectstorage
+    db.delete(&content_address)
+        .await
+        .map_err(UserError::internal)?;
+
+    log::debug!("Deleted artifact {content_address}.");
+
+    let in_use = db
+        .search(&file_content_address)
+        .await
+        .map_err(UserError::internal)?;
+
+    if in_use.is_empty() {
+        log::debug!("File {file_content_address} is orphaned. Deleting it.");
+        app_state
+            .objstore
+            .delete(&file_content_address)
+            .await
+            .map_err(UserError::internal)?;
+    } else {
+        log::debug!(
+            "File {file_content_address} still referenced by {len} artifacts: {in_use:?}",
+            len = in_use.len()
+        )
+    }
 
     Ok(HttpResponse::Accepted().into())
 }

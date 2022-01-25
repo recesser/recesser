@@ -19,15 +19,19 @@ pub struct Cli {
 pub enum Commands {
     /// Get and set configuration options
     Config { key: String, value: Option<String> },
-    /// Upload file
+    /// Compute handle
+    Hash { file: PathBuf },
+    /// Upload artifact
     Upload {
         file: PathBuf,
 
         #[clap(short, long)]
         metadata: Option<PathBuf>,
     },
-    /// Download file
+    /// List all artifacts
+    List,
+    /// Download artifact
     Download { handle: String },
-    /// Compute file handle
-    Hash { file: PathBuf },
+    /// Delete artifact
+    Delete { handle: String },
 }

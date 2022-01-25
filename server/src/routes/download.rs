@@ -13,16 +13,16 @@ async fn download(
 ) -> Result<NamedFile, Error> {
     let content_address = content_address.into_inner();
 
-    let metadata = app_state
-        .database
-        .get(&content_address)
-        .await
-        .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
-            Ok(err) => UserError::NotFound {
-                path: format!("artifacts/{}", err.key),
-            },
-            _ => UserError::Internal,
-        })?;
+    let mut db = app_state.database.clone();
+
+    let metadata = db.get(&content_address).await.map_err(|e| match e
+        .downcast::<database::KeyNotFoundError>()
+    {
+        Ok(err) => UserError::NotFound {
+            path: format!("artifacts/{}", err.key),
+        },
+        _ => UserError::Internal,
+    })?;
 
     let path = app_state
         .objstore

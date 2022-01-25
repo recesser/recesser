@@ -19,6 +19,13 @@ impl UserError {
         UserError::Internal
     }
 
+    pub fn not_found(path: &str, e: impl std::error::Error) -> Self {
+        log::debug!("{e}");
+        UserError::NotFound {
+            path: path.to_string(),
+        }
+    }
+
     pub fn bad_request(e: anyhow::Error) -> Self {
         log::debug!("{e}");
         UserError::BadRequest
