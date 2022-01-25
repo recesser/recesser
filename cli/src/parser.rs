@@ -34,4 +34,6 @@ pub enum Commands {
     Download { handle: String },
     /// Delete artifact
     Delete { handle: String },
+    /// Compress file
+    Compress { file: PathBuf },
 }

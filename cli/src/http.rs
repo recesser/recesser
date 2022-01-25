@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
@@ -24,10 +25,12 @@ impl Client {
         metadata: Metadata,
         filepath: &Path,
     ) -> Result<Response> {
+        let file = fs::File::open(filepath)?;
+
         let form = multipart::Form::new()
             .text("content-address", String::from(content_address))
             .text("metadata", serde_json::to_string(&metadata)?)
-            .file("file", filepath)?;
+            .part("file", multipart::Part::reader(file));
 
         let resp = self
             .client
