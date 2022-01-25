@@ -4,17 +4,17 @@ use crate::database;
 use crate::error::UserError;
 use crate::AppState;
 
-#[delete("/{content_address}")]
+#[delete("/{handle}")]
 async fn delete(
-    content_address: web::Path<String>,
+    handle: web::Path<String>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let content_address = content_address.into_inner();
+    let handle = handle.into_inner();
 
     let mut db = app_state.database.clone();
 
     let file_content_address = db
-        .get(&content_address)
+        .get(&handle)
         .await
         .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
             Ok(e) => UserError::not_found(&format!("artifacts/{}", &e.key), e),
@@ -22,11 +22,9 @@ async fn delete(
         })?
         .file_content_address;
 
-    db.delete(&content_address)
-        .await
-        .map_err(UserError::internal)?;
+    db.delete(&handle).await.map_err(UserError::internal)?;
 
-    log::debug!("Deleted artifact {content_address}.");
+    log::debug!("Deleted artifact {handle}.");
 
     let in_use = db
         .search(&file_content_address)

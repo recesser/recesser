@@ -12,7 +12,8 @@ use crate::error::UserError;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(upload::upload)
-        .service(download::download)
+        .service(download::download_file)
+        .service(download::download_metadata)
         .service(list::list)
         .service(delete::delete);
 }

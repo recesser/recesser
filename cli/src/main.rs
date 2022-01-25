@@ -82,9 +82,9 @@ fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) ->
     };
     log::debug!("Metadata: {metadata:#?}");
 
-    let content_address = hash(&serde_json::to_vec(&metadata)?);
-    g.http.upload(&content_address, metadata, filepath)?;
-    println!("{content_address}");
+    let handle = hash(&serde_json::to_vec(&metadata)?);
+    g.http.upload(&handle, metadata, filepath)?;
+    println!("{handle}");
 
     Ok(())
 }
@@ -110,9 +110,14 @@ fn list_command(g: Global) -> Result<()> {
 }
 
 fn download_command(g: Global, handle: &str) -> Result<()> {
-    let mut resp = g.http.download(handle)?;
+    let mut file_resp = g.http.download_file(handle)?;
     let mut file = fs::File::create(handle)?;
-    resp.copy_to(&mut file)?;
+    file_resp.copy_to(&mut file)?;
+
+    let mut metadata_resp = g.http.download_metadata(handle)?;
+    let mut file = fs::File::create(format!("{handle}.meta.json"))?;
+    metadata_resp.copy_to(&mut file)?;
+
     println!("Downloaded artifact: {handle}");
     Ok(())
 }

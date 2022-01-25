@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use actix_multipart::{Field, Multipart};
-use actix_web::{post, web, Error, HttpResponse};
+use actix_web::{put, web, Error, HttpResponse};
 use anyhow::Result;
 use futures_util::TryStreamExt;
 use recesser_core::metadata::Metadata;
@@ -13,14 +13,14 @@ use crate::error::UserError;
 use crate::filesystem::tempfile;
 use crate::AppState;
 
-#[post("")]
+#[put("")]
 async fn upload(
     mut payload: Multipart,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     let mut db = app_state.database.clone();
 
-    let mut content_address: Option<String> = None;
+    let mut handle: Option<String> = None;
     let mut metadata: Option<Metadata> = None;
 
     while let Some(mut field) = payload.try_next().await? {
@@ -30,21 +30,21 @@ async fn upload(
             .ok_or(UserError::BadRequest)?;
 
         match field_name {
-            "content-address" => {
-                content_address = extract_string(&mut field)
+            "handle" => {
+                handle = extract_string(&mut field)
                     .await
                     .map_err(UserError::bad_request)?;
             }
             "metadata" => {
-                let content_address = content_address.as_ref().ok_or(UserError::BadRequest)?;
-                log::debug!("Extracted content-address: {content_address}");
+                let handle = handle.as_ref().ok_or(UserError::BadRequest)?;
+                log::debug!("Extracted handle: {handle}");
 
                 let buf = field.try_collect::<Vec<web::Bytes>>().await?.concat();
-                verify(&buf, content_address).await?;
+                verify(&buf, handle).await?;
                 metadata = Some(serde_json::from_slice(&buf).map_err(|_| UserError::BadRequest)?);
             }
             "file" => {
-                let content_address = content_address.as_ref().ok_or(UserError::BadRequest)?;
+                let handle = handle.as_ref().ok_or(UserError::BadRequest)?;
                 let metadata = metadata.as_ref().ok_or(UserError::BadRequest)?;
                 log::debug!("Extracted metadata: \n{metadata:#?}");
 
@@ -63,7 +63,7 @@ async fn upload(
                         .map_err(UserError::internal)?
                 }
 
-                db.set(content_address, &metadata)
+                db.set(handle, &metadata)
                     .await
                     .map_err(UserError::internal)?;
             }

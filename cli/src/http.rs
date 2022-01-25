@@ -19,22 +19,17 @@ impl Client {
         }
     }
 
-    pub fn upload(
-        &self,
-        content_address: &str,
-        metadata: Metadata,
-        filepath: &Path,
-    ) -> Result<Response> {
+    pub fn upload(&self, handle: &str, metadata: Metadata, filepath: &Path) -> Result<Response> {
         let file = fs::File::open(filepath)?;
 
         let form = multipart::Form::new()
-            .text("content-address", String::from(content_address))
+            .text("handle", String::from(handle))
             .text("metadata", serde_json::to_string(&metadata)?)
             .part("file", multipart::Part::reader(file));
 
         let resp = self
             .client
-            .post(self.url("/artifacts"))
+            .put(self.url("/artifacts"))
             .multipart(form)
             .send()?;
 
@@ -48,10 +43,19 @@ impl Client {
         Ok(resp)
     }
 
-    pub fn download(&self, handle: &str) -> Result<Response> {
+    pub fn download_file(&self, handle: &str) -> Result<Response> {
         let resp = self
             .client
-            .get(self.url(&format!("/artifacts/{handle}")))
+            .get(self.url(&format!("/artifacts/{handle}/file")))
+            .send()?;
+        log::debug!("Received response: {resp:#?}");
+        Ok(resp)
+    }
+
+    pub fn download_metadata(&self, handle: &str) -> Result<Response> {
+        let resp = self
+            .client
+            .get(self.url(&format!("/artifacts/{handle}/metadata")))
             .send()?;
         log::debug!("Received response: {resp:#?}");
         Ok(resp)
