@@ -1,0 +1,6 @@
+[alias]
+l = "clippy --workspace --tests --bins"
+f = "fmt --all -- --check"
+c = "check --workspace"
+t = "test"
+b = "build"
