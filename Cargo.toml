@@ -5,3 +5,6 @@ members = [
     "cli",
     "server"
 ]
+
+[profile.release]
+lto = true

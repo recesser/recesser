@@ -24,6 +24,8 @@ async fn main() -> std::io::Result<()> {
         .parse_filters(&s.log_level)
         .init();
 
+    println!("{s:#?}");
+
     let app_state = web::Data::new(AppState {
         objstore: ObjectStorage::new(&s.objectstorage_addr)
             .expect("Failed to connect to objectstorage"),

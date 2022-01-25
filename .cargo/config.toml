@@ -4,3 +4,6 @@ f = "fmt --all -- --check"
 c = "check --workspace"
 t = "test"
 b = "build"
+
+[build]
+target = "x86_64-unknown-linux-musl"
