@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
         .parse_filters(&s.log_level)
         .init();
 
-    println!("{s:#?}");
+    log::debug!("{s:#?}");
 
     let app_state = web::Data::new(AppState {
         objstore: ObjectStorage::new(&s.objectstorage_addr)
