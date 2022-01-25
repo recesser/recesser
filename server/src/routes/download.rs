@@ -30,9 +30,9 @@ async fn download(
         .await
         .map_err(UserError::internal)?;
 
-    log::debug!("Downloaded file path: {path:?}");
+    log::debug!("Path of downloaded file: {path:?}");
 
-    verify_file(&path, &content_address).await?;
+    verify_file(&path, &metadata.file_content_address).await?;
 
     Ok(NamedFile::open_async(&path).await?)
 }
