@@ -1,13 +1,11 @@
 use std::convert::AsRef;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
 use tokio::fs;
-
-use crate::filesystem::tempfile;
 
 #[derive(Clone)]
 pub struct ObjectStorage {
@@ -46,15 +44,18 @@ impl ObjectStorage {
         Ok(())
     }
 
-    pub async fn download_file(&self, content_address: impl AsRef<str>) -> Result<PathBuf> {
-        let path = tempfile()?;
-        let mut file = fs::File::create(&path).await?;
+    pub async fn download_file(
+        &self,
+        content_address: impl AsRef<str>,
+        filepath: &Path,
+    ) -> Result<()> {
+        let mut file = fs::File::create(&filepath).await?;
         let code = self
             .bucket
             .get_object_stream(content_address, &mut file)
             .await?;
         log::debug!("Received minio code: {code}");
-        Ok(path)
+        Ok(())
     }
 
     // pub async fn list(&self) -> Result<Vec<String>> {

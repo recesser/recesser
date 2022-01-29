@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use actix_multipart::{Field, Multipart};
 use actix_web::{put, web, Error, HttpResponse};
@@ -10,7 +10,6 @@ use tokio::io::AsyncWriteExt;
 
 use super::{verify, verify_file};
 use crate::error::UserError;
-use crate::filesystem::tempfile;
 use crate::AppState;
 
 #[put("")]
@@ -58,7 +57,7 @@ async fn upload(
                     log::debug!("File already exist in object storage. Skipping upload.");
                 } else {
                     log::debug!("File doesn't exist in object storage. Uploading it.");
-                    upload_file(&mut field, metadata, &app_state)
+                    extract_and_upload_file(&mut field, metadata, &app_state)
                         .await
                         .map_err(UserError::internal)?
                 }
@@ -78,28 +77,29 @@ async fn extract_string(field: &mut Field) -> Result<Option<String>> {
     Ok(Some(String::from_utf8(buf)?))
 }
 
-async fn upload_file(
+async fn extract_and_upload_file(
     field: &mut Field,
     metadata: &Metadata,
     app_state: &web::Data<AppState>,
 ) -> Result<()> {
-    let file_path = write_to_file(field).await?;
+    let file = tempfile::NamedTempFile::new()?;
+    let filepath = file.path();
+    extract_file(field, &filepath).await?;
 
     let verified_file_content_address =
-        verify_file(&file_path, &metadata.file_content_address).await?;
+        verify_file(&filepath, &metadata.file_content_address).await?;
 
     app_state
         .objstore
-        .upload_file(&verified_file_content_address, &file_path)
+        .upload_file(&verified_file_content_address, &filepath)
         .await?;
     Ok(())
 }
 
-async fn write_to_file(field: &mut Field) -> Result<PathBuf> {
-    let file_path = tempfile()?;
+async fn extract_file(field: &mut Field, file_path: &Path) -> Result<()> {
     let mut file = fs::File::create(&file_path).await?;
     while let Some(chunk) = field.try_next().await? {
         file.write_all(&chunk).await?;
     }
-    Ok(file_path)
+    Ok(())
 }

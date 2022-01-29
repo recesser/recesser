@@ -64,7 +64,7 @@ impl Cli {
 }
 
 fn hash_command(filepath: PathBuf) -> Result<()> {
-    let hash = hash_from_disk(filepath)?;
+    let hash = hash_from_disk(&filepath)?;
     println!("{}", hash);
     Ok(())
 }

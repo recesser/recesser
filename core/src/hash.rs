@@ -1,4 +1,3 @@
-use std::convert::AsRef;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -8,7 +7,7 @@ use blake3::{Hash, Hasher};
 
 const CAP: usize = 1024 * 128; // Should be multiple of 128KiB to use SIMD optimizations
 
-pub fn hash_from_disk(filepath: impl AsRef<Path>) -> Result<String> {
+pub fn hash_from_disk(filepath: &Path) -> Result<String> {
     let mut file = File::open(filepath)?;
     let mut hasher = Hasher::new();
 
@@ -43,8 +42,8 @@ pub fn verify_integrity(buf: &[u8], checksum: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn verify_file_integrity(file_path: impl AsRef<Path>, checksum: &str) -> Result<String> {
-    let determined_checksum = hash_from_disk(file_path)?;
+pub fn verify_file_integrity(filepath: &Path, checksum: &str) -> Result<String> {
+    let determined_checksum = hash_from_disk(filepath)?;
     println!("Advertised checksum: {checksum}");
     println!("Determined checksum: {determined_checksum}");
     if determined_checksum.ne(checksum) {

@@ -25,7 +25,7 @@ async fn verify_file(
     let path = path.to_owned();
     let content_address = file_content_address.to_owned();
     let verified_content_address = web::block(move || {
-        verify_file_integrity(path, &content_address).expect("Failed to verify file integrity")
+        verify_file_integrity(&path, &content_address).expect("Failed to verify file integrity")
     })
     .await
     .map_err(|_| UserError::Integrity)?;

@@ -1,7 +1,7 @@
 mod database;
 mod error;
-mod filesystem;
 mod objectstorage;
+mod pipeline;
 mod routes;
 mod settings;
 
