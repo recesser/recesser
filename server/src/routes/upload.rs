@@ -84,10 +84,10 @@ async fn extract_and_upload_file(
 ) -> Result<()> {
     let file = tempfile::NamedTempFile::new()?;
     let filepath = file.path();
-    extract_file(field, &filepath).await?;
+    extract_file(field, filepath).await?;
 
     let verified_file_content_address =
-        verify_file(&filepath, &metadata.file_content_address).await?;
+        verify_file(filepath, &metadata.file_content_address).await?;
 
     app_state
         .objstore

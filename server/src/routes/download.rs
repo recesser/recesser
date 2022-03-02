@@ -31,13 +31,13 @@ async fn download_file(
 
     let path = app_state
         .objstore
-        .download_file(&metadata.file_content_address, &filepath)
+        .download_file(&metadata.file_content_address, filepath)
         .await
         .map_err(UserError::internal)?;
 
     log::debug!("Path of downloaded file: {path:?}");
 
-    verify_file(&filepath, &metadata.file_content_address).await?;
+    verify_file(filepath, &metadata.file_content_address).await?;
 
     Ok(NamedFile::open_async(&filepath).await?)
 }
