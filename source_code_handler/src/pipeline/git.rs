@@ -1,19 +1,13 @@
 use std::path::Path;
 
 use anyhow::Result;
-use git2::{build::RepoBuilder, Cred, FetchOptions, RemoteCallbacks};
+use git2::build::RepoBuilder;
+use git2::{Cred, FetchOptions, RemoteCallbacks};
 
-const PRIVATE_KEY_PATH: &str = "/sshkey";
-
-pub fn clone(repository: &str, dirpath: &Path) -> Result<()> {
+pub fn clone(repository: &str, dirpath: &Path, private_key_path: &Path) -> Result<()> {
     let mut callbacks = RemoteCallbacks::new();
     callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        Cred::ssh_key(
-            username_from_url.unwrap(),
-            None,
-            Path::new(PRIVATE_KEY_PATH),
-            None,
-        )
+        Cred::ssh_key(username_from_url.unwrap(), None, private_key_path, None)
     });
 
     let mut fetch_options = FetchOptions::new();

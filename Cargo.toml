@@ -3,7 +3,8 @@
 members = [
     "core",
     "cli",
-    "server"
+    "server",
+    "source_code_handler",
 ]
 
 [profile.release]
