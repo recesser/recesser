@@ -1,7 +1,6 @@
 mod database;
 mod error;
 mod objectstorage;
-mod pipeline;
 mod routes;
 mod settings;
 
