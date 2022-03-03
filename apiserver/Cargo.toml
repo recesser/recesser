@@ -1,5 +1,5 @@
 [package]
-name = "recesser-server"
+name = "recesser-apiserver"
 version = "0.1.0"
 authors = ["nikstur <nikstur@outlook.com>"]
 license = "MIT"

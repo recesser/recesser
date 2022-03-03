@@ -3,7 +3,7 @@
 members = [
     "core",
     "cli",
-    "server",
+    "apiserver",
     "source_code_handler",
 ]
 

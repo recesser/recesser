@@ -1656,6 +1656,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "recesser-apiserver"
+version = "0.1.0"
+dependencies = [
+ "actix-files",
+ "actix-multipart",
+ "actix-web",
+ "anyhow",
+ "config",
+ "env_logger",
+ "futures-util",
+ "log",
+ "recesser-core",
+ "redis",
+ "rust-s3",
+ "serde 1.0.133",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "recesser-cli"
 version = "0.1.0"
 dependencies = [
@@ -1683,29 +1706,6 @@ dependencies = [
  "serde 1.0.133",
  "serde_json",
  "serde_with",
-]
-
-[[package]]
-name = "recesser-server"
-version = "0.1.0"
-dependencies = [
- "actix-files",
- "actix-multipart",
- "actix-web",
- "anyhow",
- "config",
- "env_logger",
- "futures-util",
- "log",
- "recesser-core",
- "redis",
- "rust-s3",
- "serde 1.0.133",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
