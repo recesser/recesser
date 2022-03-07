@@ -2,6 +2,8 @@
 
 ## HTTP Server
 
+### Artifacts
+
 | Method | URL                          | Description                |
 | ------ | ---------------------------- | -------------------------- |
 | PUT    | /artifacts                   | Upload artifact            |
@@ -9,6 +11,15 @@
 | GET    | /artifacts/{handle}/file     | Download artifact file     |
 | GET    | /artifacts/{handle}/metadata | Download artifact metadata |
 | DELETE | /artifacts/{handle}          | Delete artifact            |
+
+### Repositories
+
+| Method | URL                             | Description                     |
+| ------ | ------------------------------- | ------------------------------- |
+| PUT    | /repositories                   | Register repository             |
+| GET    | /repositories                   | List all repositories           |
+| GET    | /repositories/{id}/credentials  | Retrieve repository credentials |
+| DELETE | /repositories/{id}              | Deregister repository           |
 
 ## Command Line Interface
 
