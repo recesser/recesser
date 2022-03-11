@@ -8,7 +8,6 @@ use recesser_core::metadata::Metadata;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
-use super::{verify, verify_file};
 use crate::error::UserError;
 use crate::AppState;
 
@@ -39,7 +38,6 @@ async fn upload(
                 log::debug!("Extracted handle: {handle}");
 
                 let buf = field.try_collect::<Vec<web::Bytes>>().await?.concat();
-                verify(&buf, handle).await?;
                 metadata = Some(serde_json::from_slice(&buf).map_err(|_| UserError::BadRequest)?);
             }
             "file" => {
@@ -86,12 +84,9 @@ async fn extract_and_upload_file(
     let filepath = file.path();
     extract_file(field, filepath).await?;
 
-    let verified_file_content_address =
-        verify_file(filepath, &metadata.file_content_address).await?;
-
     app_state
         .objstore
-        .upload_file(&verified_file_content_address, &filepath)
+        .upload_file(&metadata.file_content_address, &filepath)
         .await?;
     Ok(())
 }

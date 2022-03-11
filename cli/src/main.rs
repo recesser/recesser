@@ -11,7 +11,7 @@ use std::process;
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime};
 use clap::Parser;
-use recesser_core::hash::{hash, hash_from_disk};
+use recesser_core::handle::Handle;
 use recesser_core::metadata::Metadata;
 
 use http::{Client, StatusCode};
@@ -64,27 +64,29 @@ impl Cli {
 }
 
 fn hash_command(filepath: PathBuf) -> Result<()> {
-    let hash = hash_from_disk(&filepath)?;
-    println!("{}", hash);
+    let object_handle = Handle::compute_from_disk(&filepath)?;
+    println!("{object_handle}");
     Ok(())
 }
 
 fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) -> Result<()> {
-    let file_content_address = hash_from_disk(filepath)?;
-    log::debug!("File content address: {file_content_address}");
+    let object_handle = Handle::compute_from_disk(filepath)?;
+    let object_handle_string = object_handle.to_string();
+    log::debug!("File content address: {object_handle_string}");
 
     let custom_metadata = metadata_path.map(read_custom_metadata).transpose()?;
     let metadata = Metadata {
-        file_content_address,
+        file_content_address: object_handle_string,
         created: Some(Local::now().naive_utc()),
         file_created: Some(file_modified(filepath)?),
         custom: custom_metadata,
     };
     log::debug!("Metadata: {metadata:#?}");
 
-    let handle = hash(&serde_json::to_vec(&metadata)?);
-    g.http.upload(&handle, metadata, filepath)?;
-    println!("{handle}");
+    let artifact_handle = Handle::compute(&serde_json::to_vec(&metadata)?);
+    g.http
+        .upload(&artifact_handle.to_string(), metadata, filepath)?;
+    println!("{artifact_handle}");
 
     Ok(())
 }

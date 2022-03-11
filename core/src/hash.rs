@@ -7,7 +7,7 @@ use blake3::{Hash, Hasher};
 
 const CAP: usize = 1024 * 128; // Should be multiple of 128KiB to use SIMD optimizations
 
-pub fn hash_from_disk(filepath: &Path) -> Result<String> {
+pub fn hash_from_disk(filepath: &Path) -> Result<[u8; 32]> {
     let mut file = File::open(filepath)?;
     let mut hasher = Hasher::new();
 
@@ -19,35 +19,18 @@ pub fn hash_from_disk(filepath: &Path) -> Result<String> {
             break;
         }
     }
-    let hash = hasher.finalize();
-    Ok(encode(&hash))
+    Ok(hasher.finalize().into())
 }
 
-pub fn hash(buf: &[u8]) -> String {
-    let hash = blake3::hash(buf);
-    encode(&hash)
+pub fn hash(buf: &[u8]) -> [u8; 32] {
+    blake3::hash(buf).into()
 }
 
-fn encode(hash: &Hash) -> String {
-    base64::encode_config(&hash.as_bytes(), base64::URL_SAFE_NO_PAD)
-}
-
-pub fn verify_integrity(buf: &[u8], checksum: &str) -> Result<()> {
-    let determined_checksum = hash(buf);
-    println!("Advertised checksum: {checksum}");
-    println!("Determined checksum: {determined_checksum}");
-    if determined_checksum.ne(checksum) {
+pub fn verify_integrity(first: &[u8; 32], second: &[u8; 32]) -> Result<()> {
+    let first_hash = &Hash::from(*first);
+    let second_hash = &Hash::from(*second);
+    if first_hash.ne(second_hash) {
         anyhow::bail!("Failed to verify integrity")
     }
     Ok(())
-}
-
-pub fn verify_file_integrity(filepath: &Path, checksum: &str) -> Result<String> {
-    let determined_checksum = hash_from_disk(filepath)?;
-    println!("Advertised checksum: {checksum}");
-    println!("Determined checksum: {determined_checksum}");
-    if determined_checksum.ne(checksum) {
-        anyhow::bail!("Failed to verify integrity")
-    }
-    Ok(determined_checksum)
 }

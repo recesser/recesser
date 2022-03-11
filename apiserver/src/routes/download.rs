@@ -2,7 +2,6 @@ use actix_files::NamedFile;
 use actix_web::{get, web, Error};
 use recesser_core::metadata::Metadata;
 
-use super::verify_file;
 use crate::database;
 use crate::error::UserError;
 use crate::AppState;
@@ -36,8 +35,6 @@ async fn download_file(
         .map_err(UserError::internal)?;
 
     log::debug!("Path of downloaded file: {path:?}");
-
-    verify_file(filepath, &metadata.file_content_address).await?;
 
     Ok(NamedFile::open_async(&filepath).await?)
 }

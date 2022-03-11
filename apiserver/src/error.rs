@@ -3,8 +3,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum UserError {
-    #[error("The integrity of the data could not be verified.")]
-    Integrity,
     #[error("Request is not formatted properly.^")]
     BadRequest,
     #[error("Resource at {path} doesn't exist.")]
@@ -41,7 +39,6 @@ impl actix_web::error::ResponseError for UserError {
     }
     fn status_code(&self) -> http::StatusCode {
         match *self {
-            UserError::Integrity => http::StatusCode::BAD_REQUEST,
             UserError::BadRequest => http::StatusCode::BAD_REQUEST,
             UserError::NotFound { .. } => http::StatusCode::NOT_FOUND,
             UserError::Internal { .. } => http::StatusCode::INTERNAL_SERVER_ERROR,
