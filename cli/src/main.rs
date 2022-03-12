@@ -64,13 +64,13 @@ impl Cli {
 }
 
 fn hash_command(filepath: PathBuf) -> Result<()> {
-    let object_handle = Handle::compute_from_disk(&filepath)?;
+    let object_handle = Handle::compute_from_file(&filepath)?;
     println!("{object_handle}");
     Ok(())
 }
 
 fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) -> Result<()> {
-    let object_handle = Handle::compute_from_disk(filepath)?;
+    let object_handle = Handle::compute_from_file(filepath)?;
     let object_handle_string = object_handle.to_string();
     log::debug!("File content address: {object_handle_string}");
 
@@ -83,7 +83,7 @@ fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) ->
     };
     log::debug!("Metadata: {metadata:#?}");
 
-    let artifact_handle = Handle::compute(&serde_json::to_vec(&metadata)?);
+    let artifact_handle = Handle::compute_from_buf(&serde_json::to_vec(&metadata)?);
     g.http
         .upload(&artifact_handle.to_string(), metadata, filepath)?;
     println!("{artifact_handle}");

@@ -5,7 +5,7 @@ use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
-use crate::hash::{hash, hash_from_disk, verify_integrity};
+use crate::hash::{hash_buf, hash_file, verify_integrity};
 
 const CONFIG: bincode::config::Configuration<LittleEndian, Fixint, SkipFixedArrayLength> =
     bincode::config::standard()
@@ -28,24 +28,18 @@ impl Handle {
         }
     }
 
-    pub fn compute(buf: &[u8]) -> Self {
-        let digest = hash(buf);
+    pub fn compute_from_buf(buf: &[u8]) -> Self {
+        let digest = hash_buf(buf);
         Self::new(digest)
     }
 
-    pub fn compute_from_disk(filepath: &Path) -> Result<Self> {
-        let digest = hash_from_disk(filepath)?;
+    pub fn compute_from_file(filepath: &Path) -> Result<Self> {
+        let digest = hash_file(filepath)?;
         Ok(Self::new(digest))
     }
 
-    pub fn verify(&self, buf: &[u8]) -> Result<()> {
-        let digest = hash(buf);
-        verify_integrity(&self.digest, &digest)
-    }
-
-    pub fn verify_from_disk(&self, filepath: &Path) -> Result<()> {
-        let digest = hash_from_disk(filepath)?;
-        verify_integrity(&self.digest, &digest)
+    pub fn verify(&self, other: &Handle) -> Result<()> {
+        verify_integrity(&self.digest, &other.digest)
     }
 }
 
