@@ -1,26 +1,23 @@
 use anyhow::{Error, Result};
-use bincode::config::{Fixint, LittleEndian, SkipFixedArrayLength};
-use bincode::{Decode, Encode};
 use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
 use crate::hash::{hash_buf, hash_file, verify_integrity};
 
-const CONFIG: bincode::config::Configuration<LittleEndian, Fixint, SkipFixedArrayLength> =
-    bincode::config::standard()
-        .with_fixed_int_encoding()
-        .skip_fixed_array_length();
+const BASE64_CONFIG: base64::Config = base64::URL_SAFE_NO_PAD;
+const DIGEST_LEN: usize = 32;
+const HANDLE_LEN: usize = DIGEST_LEN + 2;
+const BASE64_HANDLE_LEN: usize = 46;
 
-#[derive(Decode, Encode)]
 pub struct Handle {
     version: u8,
     algorithm: u8,
-    digest: [u8; 32],
+    digest: [u8; DIGEST_LEN],
 }
 
 impl Handle {
-    fn new(digest: [u8; 32]) -> Self {
+    fn new(digest: [u8; DIGEST_LEN]) -> Self {
         Self {
             version: 1,
             algorithm: 1,
@@ -41,19 +38,38 @@ impl Handle {
     pub fn verify(&self, other: &Handle) -> Result<()> {
         verify_integrity(&self.digest, &other.digest)
     }
+
+    fn serialize(&self) -> [u8; HANDLE_LEN] {
+        let mut buf = [0; HANDLE_LEN];
+        buf[0] = self.version;
+        buf[1] = self.algorithm;
+        buf[2..].copy_from_slice(&self.digest);
+        buf
+    }
+
+    fn deserialize(buf: &[u8; HANDLE_LEN]) -> Self {
+        let mut digest = [0; DIGEST_LEN];
+        digest.copy_from_slice(&buf[2..]);
+        Self {
+            version: buf[0],
+            algorithm: buf[1],
+            digest,
+        }
+    }
 }
 
 impl fmt::Display for Handle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let bytes = bincode::encode_to_vec(self, CONFIG).unwrap();
-        println!("Length of serialized handle: {}", bytes.len());
+        let bytes = self.serialize();
         let s = encode(&bytes);
         write!(f, "{s}")
     }
 }
 
-fn encode(input: &[u8]) -> String {
-    base64::encode_config(input, base64::URL_SAFE_NO_PAD)
+fn encode(input: &[u8; HANDLE_LEN]) -> String {
+    let mut buf = String::with_capacity(BASE64_HANDLE_LEN);
+    base64::encode_config_buf(input, BASE64_CONFIG, &mut buf);
+    buf
 }
 
 impl FromStr for Handle {
@@ -61,11 +77,13 @@ impl FromStr for Handle {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes = decode(s)?;
-        let handle: Handle = bincode::decode_from_slice(&bytes, CONFIG)?.0;
+        let handle = Handle::deserialize(&bytes);
         Ok(handle)
     }
 }
 
-fn decode(input: &str) -> Result<Vec<u8>> {
-    Ok(base64::decode_config(input, base64::URL_SAFE_NO_PAD)?)
+fn decode(input: &str) -> Result<[u8; HANDLE_LEN]> {
+    let mut buf = [0; HANDLE_LEN];
+    base64::decode_config_slice(input, BASE64_CONFIG, &mut buf)?;
+    Ok(buf)
 }
