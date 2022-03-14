@@ -3,13 +3,13 @@ use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
-use crate::hash::{hash_buf, hash_file, verify_integrity};
+use crate::hash::{hash_buf, hash_file, DIGEST_LEN};
 
 const BASE64_CONFIG: base64::Config = base64::URL_SAFE_NO_PAD;
-const DIGEST_LEN: usize = 32;
 const HANDLE_LEN: usize = DIGEST_LEN + 2;
 const BASE64_HANDLE_LEN: usize = 46;
 
+#[derive(PartialEq)]
 pub struct Handle {
     version: u8,
     algorithm: u8,
@@ -36,7 +36,10 @@ impl Handle {
     }
 
     pub fn verify(&self, other: &Handle) -> Result<()> {
-        verify_integrity(&self.digest, &other.digest)
+        if self.ne(other) {
+            anyhow::bail!("Failed to verify integrity")
+        }
+        Ok(())
     }
 
     fn serialize(&self) -> [u8; HANDLE_LEN] {

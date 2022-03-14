@@ -3,18 +3,20 @@ use std::io::Read;
 use std::path::Path;
 
 use anyhow::Result;
-use blake3::{Hash, Hasher};
 
-const CAP: usize = 1024 * 128; // Should be multiple of 128KiB to leverage multi-threading and SIMD optimizations
+pub const DIGEST_LEN: usize = blake3::OUT_LEN;
 
-pub fn hash_file(filepath: &Path) -> Result<[u8; 32]> {
+/// Should be multiple of 128KiB to leverage multi-threading and SIMD optimizations
+const BUF_LEN: usize = 1024 * 128;
+
+pub fn hash_file(filepath: &Path) -> Result<[u8; DIGEST_LEN]> {
     let mut file = File::open(filepath)?;
-    let mut hasher = Hasher::new();
+    let mut hasher = blake3::Hasher::new();
 
     loop {
-        let mut buffer = [0; CAP];
-        let n = file.read(&mut buffer)?;
-        hasher.update_rayon(&buffer);
+        let mut buf = [0; BUF_LEN];
+        let n = file.read(&mut buf)?;
+        hasher.update_rayon(&buf);
         if n == 0 {
             break;
         }
@@ -22,16 +24,6 @@ pub fn hash_file(filepath: &Path) -> Result<[u8; 32]> {
     Ok(hasher.finalize().into())
 }
 
-pub fn hash_buf(buf: &[u8]) -> [u8; 32] {
+pub fn hash_buf(buf: &[u8]) -> [u8; DIGEST_LEN] {
     blake3::hash(buf).into()
-}
-
-/// Performs equality check in constant time.
-pub fn verify_integrity(first: &[u8; 32], second: &[u8; 32]) -> Result<()> {
-    let first_hash = &Hash::from(*first);
-    let second_hash = &Hash::from(*second);
-    if first_hash.ne(second_hash) {
-        anyhow::bail!("Failed to verify integrity")
-    }
-    Ok(())
 }
