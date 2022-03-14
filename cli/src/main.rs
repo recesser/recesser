@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 use anyhow::Result;
-use chrono::{Local, NaiveDateTime};
 use clap::Parser;
 use recesser_core::handle::Handle;
 use recesser_core::metadata::Metadata;
@@ -71,17 +70,14 @@ fn hash_command(filepath: PathBuf) -> Result<()> {
 
 fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) -> Result<()> {
     let object_handle = Handle::compute_from_file(filepath)?;
-    let object_handle_string = object_handle.to_string();
-    log::debug!("File content address: {object_handle_string}");
+    log::debug!("Object handle: {object_handle:#?}");
 
     let custom_metadata = metadata_path.map(read_custom_metadata).transpose()?;
     let metadata = Metadata {
-        file_content_address: object_handle_string,
-        created: Some(Local::now().naive_utc()),
-        file_created: Some(file_modified(filepath)?),
+        object_handle,
         custom: custom_metadata,
     };
-    log::debug!("Metadata: {metadata:#?}");
+    log::debug!("{metadata:#?}");
 
     let artifact_handle = Handle::compute_from_buf(&serde_json::to_vec(&metadata)?);
     g.http
@@ -89,12 +85,6 @@ fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) ->
     println!("{artifact_handle}");
 
     Ok(())
-}
-
-fn file_modified(filepath: &Path) -> Result<NaiveDateTime> {
-    let metadata = fs::metadata(filepath)?;
-    let created = chrono::DateTime::<chrono::Utc>::from(metadata.modified()?);
-    Ok(created.naive_utc())
 }
 
 fn read_custom_metadata(filepath: PathBuf) -> Result<serde_json::Value> {

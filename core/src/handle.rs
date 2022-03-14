@@ -1,4 +1,7 @@
 use anyhow::{Error, Result};
+use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::ser::{Serialize, Serializer};
+
 use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
@@ -9,7 +12,7 @@ const BASE64_CONFIG: base64::Config = base64::URL_SAFE_NO_PAD;
 const HANDLE_LEN: usize = DIGEST_LEN + 2;
 const BASE64_HANDLE_LEN: usize = 46;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub struct Handle {
     version: u8,
     algorithm: u8,
@@ -89,4 +92,40 @@ fn decode(input: &str) -> Result<[u8; HANDLE_LEN]> {
     let mut buf = [0; HANDLE_LEN];
     base64::decode_config_slice(input, BASE64_CONFIG, &mut buf)?;
     Ok(buf)
+}
+
+impl Serialize for Handle {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = self.to_string();
+        serializer.serialize_str(&s)
+    }
+}
+
+struct HandleVisitor;
+
+impl<'de> Visitor<'de> for HandleVisitor {
+    type Value = Handle;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("Base64 encoded handle")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(FromStr::from_str(value).unwrap())
+    }
+}
+
+impl<'de> Deserialize<'de> for Handle {
+    fn deserialize<D>(deserializer: D) -> Result<Handle, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(HandleVisitor)
+    }
 }
