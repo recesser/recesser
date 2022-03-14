@@ -17,7 +17,7 @@ RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path r
 COPY . .
 RUN cargo build --release --bin recesser-apiserver
 
-FROM gcr.io/distroless/cc
+FROM gcr.io/distroless/static
 WORKDIR app
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/recesser-apiserver /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/recesser-apiserver"]
