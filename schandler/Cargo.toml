@@ -1,5 +1,5 @@
 [package]
-name = "recesser-source-code-handler"
+name = "recesser-schandler"
 version = "0.1.0"
 authors = ["nikstur <nikstur@outlook.com>"]
 license = "MIT"

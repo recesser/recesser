@@ -4,7 +4,7 @@ members = [
     "core",
     "cli",
     "apiserver",
-    "source_code_handler",
+    "schandler",
 ]
 
 [profile.release]
