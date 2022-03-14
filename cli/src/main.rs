@@ -1,4 +1,3 @@
-mod compress;
 mod http;
 mod parser;
 mod settings;
@@ -55,7 +54,6 @@ impl Cli {
             Commands::List {} => list_command(global)?,
             Commands::Download { handle } => download_command(global, &handle)?,
             Commands::Delete { handle } => delete_command(global, &handle)?,
-            Commands::Compress { file } => compress_command(&file)?,
             _ => println!("Not implemented"),
         };
         Ok(())
@@ -122,8 +120,4 @@ fn delete_command(g: Global, handle: &str) -> Result<()> {
         _ => println!("Internal error: {resp:?}"),
     }
     Ok(())
-}
-
-fn compress_command(filepath: &Path) -> Result<()> {
-    compress::compress_on_disk(filepath)
 }
