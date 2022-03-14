@@ -30,7 +30,7 @@ async fn download_file(
 
     let path = app_state
         .objstore
-        .download_file(&metadata.file_content_address, filepath)
+        .download_file(&metadata.object_handle.to_string(), filepath)
         .await
         .map_err(UserError::internal)?;
 

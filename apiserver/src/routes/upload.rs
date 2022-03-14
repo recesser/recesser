@@ -47,7 +47,7 @@ async fn upload(
 
                 let file_exists = app_state
                     .objstore
-                    .exists(&metadata.file_content_address)
+                    .exists(&metadata.object_handle.to_string())
                     .await
                     .map_err(UserError::internal)?;
 
@@ -86,7 +86,7 @@ async fn extract_and_upload_file(
 
     app_state
         .objstore
-        .upload_file(&metadata.file_content_address, &filepath)
+        .upload_file(&metadata.object_handle.to_string(), &filepath)
         .await?;
     Ok(())
 }
