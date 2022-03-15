@@ -15,7 +15,7 @@ FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
 COPY . .
-RUN cargo build --release --bin recesser-apiserver
+RUN cargo build --release --target x86_64-unknown-linux-musl --bin recesser-apiserver
 
 FROM gcr.io/distroless/static
 WORKDIR app
