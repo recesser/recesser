@@ -1,15 +1,14 @@
-pub mod git;
-pub mod poll;
-pub mod submit;
-pub mod transform;
-
 use std::path::PathBuf;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_yaml::Value;
+use tokio::fs;
+
+use crate::repository::Repository;
 
 #[derive(Deserialize, Serialize, Debug)]
-struct Pipeline {
+pub struct Workflow {
     name: String,
     artifact: String,
     template: Option<Template>,
@@ -28,4 +27,11 @@ struct Template {
 enum Language {
     Python,
     R,
+}
+
+impl Workflow {
+    pub async fn from_repo(repo: &Repository) -> Result<Self> {
+        let buf = fs::read_to_string(repo.join("recesser.yaml")).await?;
+        Ok(serde_yaml::from_str(&buf)?)
+    }
 }
