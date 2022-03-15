@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use tokio::fs;
 
-use crate::repository::Repository;
+use crate::repository::LocalRepository;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Workflow {
@@ -30,7 +30,7 @@ enum Language {
 }
 
 impl Workflow {
-    pub async fn from_repo(repo: &Repository) -> Result<Self> {
+    pub async fn from_repo(repo: &LocalRepository) -> Result<Self> {
         let buf = fs::read_to_string(repo.join("recesser.yaml")).await?;
         Ok(serde_yaml::from_str(&buf)?)
     }
