@@ -31,7 +31,11 @@ enum Language {
 
 impl Workflow {
     pub async fn from_repo(repo: &LocalRepository) -> Result<Self> {
-        let buf = fs::read_to_string(repo.join("recesser.yaml")).await?;
+        let workflow_path = repo.path().join("recesser.yaml");
+        if !workflow_path.exists() {
+            anyhow::bail!("Repository doesn't contain a workflow file (recesser.yaml).");
+        }
+        let buf = fs::read_to_string(&workflow_path).await?;
         Ok(serde_yaml::from_str(&buf)?)
     }
 }

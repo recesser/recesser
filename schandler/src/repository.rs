@@ -1,17 +1,19 @@
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use git2::build::RepoBuilder;
 use git2::{Cred, FetchOptions, RemoteCallbacks};
+use recesser_core::repository::{CommitID, Repository};
 use tempfile::tempdir;
 
+#[derive(Debug)]
 pub struct LocalRepository {
     path: PathBuf,
+    last_commit: CommitID,
 }
 
 impl LocalRepository {
-    pub fn clone(repository: &str, private_key_path: &Path) -> Result<Self> {
+    pub fn from_remote(repository: &Repository, private_key_path: &Path) -> Result<Self> {
         let dir = tempdir()?;
         let dirpath = dir.into_path();
 
@@ -26,15 +28,21 @@ impl LocalRepository {
         let mut builder = RepoBuilder::new();
         builder.fetch_options(fetch_options);
 
-        builder.clone(&format!("git@github.com:{repository}.git"), &dirpath)?;
-        Ok(Self { path: dirpath })
+        let repo = builder.clone(repository.url(), &dirpath)?;
+        let head_obj = repo.revparse_single("HEAD")?;
+        let last_commit = CommitID(Some(head_obj.id().to_string()));
+
+        Ok(Self {
+            path: dirpath,
+            last_commit,
+        })
     }
-}
 
-impl Deref for LocalRepository {
-    type Target = Path;
-
-    fn deref(&self) -> &Self::Target {
+    pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    pub fn last_commit(&self) -> &CommitID {
+        &self.last_commit
     }
 }
