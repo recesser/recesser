@@ -34,6 +34,6 @@ pub enum Commands {
     Download { handle: String },
     /// Delete artifact
     Delete { handle: String },
-    /// Compress file
-    Compress { file: PathBuf },
+    /// Generate ed25519 SSH keypair
+    Keygen { repo: String },
 }

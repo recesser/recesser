@@ -1,6 +1,7 @@
 mod http;
 mod parser;
 mod settings;
+mod ssh_keys;
 
 use std::fs;
 use std::io::Write;
@@ -54,6 +55,7 @@ impl Cli {
             Commands::List {} => list_command(global)?,
             Commands::Download { handle } => download_command(global, &handle)?,
             Commands::Delete { handle } => delete_command(global, &handle)?,
+            Commands::Keygen { repo } => keygen_command(&repo)?,
             _ => println!("Not implemented"),
         };
         Ok(())
@@ -119,5 +121,12 @@ fn delete_command(g: Global, handle: &str) -> Result<()> {
         StatusCode::NOT_FOUND => println!("Artifact {handle} doesn't exist."),
         _ => println!("Internal error: {resp:?}"),
     }
+    Ok(())
+}
+
+fn keygen_command(repo: &str) -> Result<()> {
+    let keypair = ssh_keys::KeyPair::generate(repo)?;
+    println!("{keypair:#?}");
+    print!("{}", String::from_utf8(keypair.public_key)?);
     Ok(())
 }
