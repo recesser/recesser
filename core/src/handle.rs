@@ -6,9 +6,9 @@ use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
+use crate::encoding;
 use crate::hash::{hash_buf, hash_file, DIGEST_LEN};
 
-const BASE64_CONFIG: base64::Config = base64::URL_SAFE_NO_PAD;
 const HANDLE_LEN: usize = DIGEST_LEN + 2;
 const BASE64_HANDLE_LEN: usize = 46;
 
@@ -67,31 +67,21 @@ impl Handle {
 impl fmt::Display for Handle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let bytes = self.serialize();
-        let s = encode(&bytes);
-        write!(f, "{s}")
+        let mut buf = String::with_capacity(BASE64_HANDLE_LEN);
+        encoding::base64::encode(&bytes, &mut buf);
+        write!(f, "{buf}")
     }
-}
-
-fn encode(input: &[u8; HANDLE_LEN]) -> String {
-    let mut buf = String::with_capacity(BASE64_HANDLE_LEN);
-    base64::encode_config_buf(input, BASE64_CONFIG, &mut buf);
-    buf
 }
 
 impl FromStr for Handle {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = decode(s)?;
-        let handle = Handle::deserialize(&bytes);
+        let mut buf = [0; HANDLE_LEN];
+        encoding::base64::decode(s, &mut buf)?;
+        let handle = Handle::deserialize(&buf);
         Ok(handle)
     }
-}
-
-fn decode(input: &str) -> Result<[u8; HANDLE_LEN]> {
-    let mut buf = [0; HANDLE_LEN];
-    base64::decode_config_slice(input, BASE64_CONFIG, &mut buf)?;
-    Ok(buf)
 }
 
 impl Serialize for Handle {
