@@ -1,2 +1,6 @@
 target/
 Dockerfile
+.vscode
+*.env
+*.md
+compose.yaml
