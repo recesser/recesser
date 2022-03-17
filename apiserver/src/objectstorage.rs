@@ -19,8 +19,8 @@ impl ObjectStorage {
             endpoint: String::from(addr),
         };
         let credentials = Credentials::from_env_specific(
-            Some("AWS_ACCESS_KEY_ID"),
-            Some("AWS_SECRET_ACCESS_KEY"),
+            Some("RECESSER_OBJECTSTORAGE_USER"),
+            Some("RECESSER_OBJECTSTORAGE_PASSWORD"),
             None,
             None,
         )?;
