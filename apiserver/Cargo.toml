@@ -5,6 +5,10 @@ authors = ["nikstur <nikstur@outlook.com>"]
 license = "MIT"
 edition = "2021"
 
+[[bin]]
+name = "apiserver"
+path = "src/main.rs"
+
 [dependencies]
 recesser-core = { version = "0.1", path = "../core" }
 actix-web  = { version = "4.0", default-features = false, features = ["macros"]}
