@@ -7,4 +7,4 @@ b = "build"
 a = "audit --ignore RUSTSEC-2020-0071 --ignore RUSTSEC-2020-0159"
 
 [build]
-target = "x86_64-unknown-linux-musl"
+target = "x86_64-unknown-linux-gnu"

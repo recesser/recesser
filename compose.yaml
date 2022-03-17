@@ -3,7 +3,10 @@ services:
     image: recesser/apiserver
     build:
       context: ./
-      dockerfile: apiserver.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        BINARY: recesser-apiserver
+    command: recesser-apiserver
     ports:
       - 8080:8080
     environment:
