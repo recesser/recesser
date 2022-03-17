@@ -11,24 +11,27 @@ async fn delete(
 ) -> Result<HttpResponse, Error> {
     let handle = handle.into_inner();
 
-    let mut db = app_state.database.clone();
+    let metadata_store = &app_state.database.metadata;
 
-    let object_handle = db
-        .get(&handle)
+    let object_handle = metadata_store
+        .retrieve(&handle)
         .await
-        .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
-            Ok(e) => UserError::not_found(&format!("artifacts/{}", &e.key), e),
+        .map_err(|e| match e.downcast::<database::HandleNotFoundError>() {
+            Ok(e) => UserError::not_found(&format!("artifacts/{}", &e.handle), e),
             Err(e) => UserError::internal(e),
         })?
         .object_handle
         .to_string();
 
-    db.delete(&handle).await.map_err(UserError::internal)?;
+    metadata_store
+        .delete(&handle)
+        .await
+        .map_err(UserError::internal)?;
 
     log::debug!("Deleted artifact {handle}.");
 
-    let in_use = db
-        .search(&object_handle)
+    let in_use = metadata_store
+        .search_object_handle(&object_handle)
         .await
         .map_err(UserError::internal)?;
 

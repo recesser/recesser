@@ -16,7 +16,7 @@ async fn upload(
     mut payload: Multipart,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let mut db = app_state.database.clone();
+    let metadata_store = &app_state.database.metadata;
 
     let mut handle: Option<String> = None;
     let mut metadata: Option<Metadata> = None;
@@ -60,7 +60,8 @@ async fn upload(
                         .map_err(UserError::internal)?
                 }
 
-                db.set(handle, &metadata)
+                metadata_store
+                    .insert(handle, metadata)
                     .await
                     .map_err(UserError::internal)?;
             }

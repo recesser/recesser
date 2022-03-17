@@ -13,17 +13,17 @@ async fn download_file(
 ) -> Result<NamedFile, Error> {
     let handle = handle.into_inner();
 
-    let mut db = app_state.database.clone();
+    let metadata_store = &app_state.database.metadata;
 
     let metadata =
-        db.get(&handle)
-            .await
-            .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
-                Ok(err) => UserError::NotFound {
-                    path: format!("artifacts/{}", err.key),
-                },
-                _ => UserError::Internal,
-            })?;
+        metadata_store.retrieve(&handle).await.map_err(|e| match e
+            .downcast::<database::HandleNotFoundError>()
+        {
+            Ok(err) => UserError::NotFound {
+                path: format!("artifacts/{}", err.handle),
+            },
+            _ => UserError::Internal,
+        })?;
 
     let file = tempfile::NamedTempFile::new()?;
     let filepath = file.path();
@@ -46,17 +46,17 @@ async fn download_metadata(
 ) -> Result<web::Json<Metadata>, Error> {
     let handle = handle.into_inner();
 
-    let mut db = app_state.database.clone();
+    let metadata_store = &app_state.database.metadata;
 
     let metadata =
-        db.get(&handle)
-            .await
-            .map_err(|e| match e.downcast::<database::KeyNotFoundError>() {
-                Ok(err) => UserError::NotFound {
-                    path: format!("artifacts/{}", err.key),
-                },
-                _ => UserError::Internal,
-            })?;
+        metadata_store.retrieve(&handle).await.map_err(|e| match e
+            .downcast::<database::HandleNotFoundError>()
+        {
+            Ok(err) => UserError::NotFound {
+                path: format!("artifacts/{}", err.handle),
+            },
+            _ => UserError::Internal,
+        })?;
 
     Ok(web::Json(metadata))
 }
