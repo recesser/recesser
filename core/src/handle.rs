@@ -12,7 +12,7 @@ use crate::hash::{hash_buf, hash_file, DIGEST_LEN};
 const HANDLE_LEN: usize = DIGEST_LEN + 2;
 const BASE64_HANDLE_LEN: usize = 46;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Handle {
     version: u8,
     algorithm: u8,
