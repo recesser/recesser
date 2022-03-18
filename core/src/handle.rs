@@ -12,7 +12,7 @@ use crate::hash::{hash_buf, hash_file, DIGEST_LEN};
 const HANDLE_LEN: usize = DIGEST_LEN + 2;
 const BASE64_HANDLE_LEN: usize = 46;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct Handle {
     version: u8,
     algorithm: u8,
@@ -61,6 +61,12 @@ impl Handle {
             algorithm: buf[1],
             digest,
         }
+    }
+}
+
+impl fmt::Debug for Handle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self}")
     }
 }
 
