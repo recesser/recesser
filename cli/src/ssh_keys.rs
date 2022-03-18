@@ -15,9 +15,9 @@ pub struct KeyPair {
 pub struct Fingerprint(String);
 
 impl KeyPair {
-    pub fn generate(repo: &str) -> Result<Self> {
+    pub fn generate(name: &str) -> Result<Self> {
         let dir = tempfile::tempdir()?;
-        let filename = repo.replace('/', "-");
+        let filename = name.replace('/', "-");
 
         keygen(dir.path(), &filename)?;
 

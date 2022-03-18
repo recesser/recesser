@@ -19,6 +19,16 @@ pub struct Cli {
 pub enum Commands {
     /// Get and set configuration options
     Config { key: String, value: Option<String> },
+    /// Manage artifacts
+    #[clap(subcommand)]
+    Artifact(ArtifactCommands),
+    /// Manage repositories
+    #[clap(subcommand)]
+    Repository(RepositoryCommands),
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ArtifactCommands {
     /// Compute handle
     Hash { file: PathBuf },
     /// Upload artifact
@@ -34,6 +44,16 @@ pub enum Commands {
     Download { handle: String },
     /// Delete artifact
     Delete { handle: String },
-    /// Generate ed25519 SSH keypair
-    Keygen { repo: String },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum RepositoryCommands {
+    /// Add repository
+    Add { name: String },
+    /// List all repositories
+    List,
+    /// Display information about repository
+    Show { name: String },
+    /// Remove repository
+    Remove { name: String },
 }

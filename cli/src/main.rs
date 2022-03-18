@@ -1,21 +1,17 @@
+#![forbid(unsafe_code)]
+
+mod commands;
 mod http;
 mod parser;
 mod settings;
 mod ssh_keys;
 
-use std::fs;
-use std::io::Write;
-use std::path::{Path, PathBuf};
 use std::process;
 
 use anyhow::Result;
 use clap::Parser;
-use recesser_core::handle::Handle;
-use recesser_core::metadata::Metadata;
 
-use http::{Client, StatusCode};
-use parser::{Cli, Commands};
-use settings::Settings;
+use parser::Cli;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -23,115 +19,5 @@ fn main() -> Result<()> {
         eprintln!("{}", e);
         process::exit(1)
     }
-    Ok(())
-}
-
-struct Global {
-    http: Client,
-}
-
-impl Cli {
-    fn call(self) -> Result<()> {
-        let s = Settings::new(&self.config)?;
-
-        env_logger::Builder::new()
-            .filter(
-                None,
-                match self.verbose {
-                    true => log::LevelFilter::Debug,
-                    false => log::LevelFilter::Info,
-                },
-            )
-            .format(|buf, record| writeln!(buf, "{}", record.args()))
-            .init();
-
-        let global = Global {
-            http: Client::new(&s.addr),
-        };
-
-        match self.commands {
-            Commands::Hash { file } => hash_command(file)?,
-            Commands::Upload { file, metadata } => upload_command(global, &file, metadata)?,
-            Commands::List {} => list_command(global)?,
-            Commands::Download { handle } => download_command(global, &handle)?,
-            Commands::Delete { handle } => delete_command(global, &handle)?,
-            Commands::Keygen { repo } => keygen_command(&repo)?,
-            _ => println!("Not implemented"),
-        };
-        Ok(())
-    }
-}
-
-fn hash_command(filepath: PathBuf) -> Result<()> {
-    let object_handle = Handle::compute_from_file(&filepath)?;
-    println!("{object_handle}");
-    Ok(())
-}
-
-fn upload_command(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) -> Result<()> {
-    let object_handle = Handle::compute_from_file(filepath)?;
-    log::debug!("Object handle: {object_handle:#?}");
-
-    let custom_metadata = metadata_path.map(read_custom_metadata).transpose()?;
-    let metadata = Metadata {
-        object_handle,
-        custom: custom_metadata,
-    };
-    log::debug!("{metadata:#?}");
-
-    let artifact_handle = Handle::compute_from_buf(&serde_json::to_vec(&metadata)?);
-    g.http
-        .upload(&artifact_handle.to_string(), metadata, filepath)?;
-    println!("{artifact_handle}");
-
-    Ok(())
-}
-
-fn read_custom_metadata(filepath: PathBuf) -> Result<serde_json::Value> {
-    let file = fs::File::open(filepath)?;
-    Ok(serde_json::from_reader(file)?)
-}
-
-fn list_command(g: Global) -> Result<()> {
-    let resp = g.http.list()?;
-    match resp.status().is_success() {
-        true => {
-            let list: Vec<String> = serde_json::from_slice(&resp.bytes()?)?;
-            for handle in list {
-                println!("{handle}");
-            }
-        }
-        false => println!("{}", resp.text()?),
-    }
-    Ok(())
-}
-
-fn download_command(g: Global, handle: &str) -> Result<()> {
-    let mut file_resp = g.http.download_file(handle)?;
-    let mut file = fs::File::create(handle)?;
-    file_resp.copy_to(&mut file)?;
-
-    let mut metadata_resp = g.http.download_metadata(handle)?;
-    let mut file = fs::File::create(format!("{handle}.meta.json"))?;
-    metadata_resp.copy_to(&mut file)?;
-
-    println!("Downloaded artifact: {handle}");
-    Ok(())
-}
-
-fn delete_command(g: Global, handle: &str) -> Result<()> {
-    let resp = g.http.delete(handle)?;
-    match resp.status() {
-        StatusCode::ACCEPTED => println!("Successfully deleted artifact {handle}"),
-        StatusCode::NOT_FOUND => println!("Artifact {handle} doesn't exist."),
-        _ => println!("Internal error: {resp:?}"),
-    }
-    Ok(())
-}
-
-fn keygen_command(repo: &str) -> Result<()> {
-    let keypair = ssh_keys::KeyPair::generate(repo)?;
-    println!("{keypair:#?}");
-    print!("{}", String::from_utf8(keypair.public_key)?);
     Ok(())
 }
