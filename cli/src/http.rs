@@ -39,7 +39,7 @@ impl Client {
 
     pub fn list(&self) -> Result<Response> {
         let resp = self.client.get(self.url("/artifacts")).send()?;
-        log::debug!("Received response: {resp:#?}");
+        log::debug!("Received response: {:#?}", &resp);
         Ok(resp)
     }
 

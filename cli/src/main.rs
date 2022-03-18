@@ -94,9 +94,14 @@ fn read_custom_metadata(filepath: PathBuf) -> Result<serde_json::Value> {
 
 fn list_command(g: Global) -> Result<()> {
     let resp = g.http.list()?;
-    let list: Vec<String> = serde_json::from_slice(&resp.bytes()?)?;
-    for handle in list {
-        println!("{handle}");
+    match resp.status().is_success() {
+        true => {
+            let list: Vec<String> = serde_json::from_slice(&resp.bytes()?)?;
+            for handle in list {
+                println!("{handle}");
+            }
+        }
+        false => println!("{}", resp.text()?),
     }
     Ok(())
 }

@@ -1,7 +1,6 @@
 use anyhow::Result;
 use futures_util::TryStreamExt;
 use mongodb::bson;
-use mongodb::options::FindOptions;
 use recesser_core::metadata::Metadata;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +11,7 @@ pub struct MetadataStore {
     collection: mongodb::Collection<MetadataDoc>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MetadataDoc {
     handle: String,
     metadata: Metadata,
@@ -29,6 +28,7 @@ impl MetadataStore {
             metadata: metadata.clone(),
         };
         self.collection.insert_one(&metadata_doc, None).await?;
+        log::debug!("Inserted metadata: {:#?}", metadata_doc);
         Ok(())
     }
 
@@ -38,18 +38,15 @@ impl MetadataStore {
             .find_one(filter_handle(handle), None)
             .await?
             .ok_or_else(|| HandleNotFoundError::new(handle))?;
+        log::debug!("Retrieved metadata: {:#?}", metadata_doc.metadata);
         Ok(metadata_doc.metadata)
     }
 
     pub async fn list_handles(&self) -> Result<Vec<String>> {
-        let options = FindOptions::builder()
-            .projection(bson::doc! {"handle": 1})
-            .build();
-        let cursor = self.collection.find(None, options).await?;
-
+        let cursor = self.collection.find(None, None).await?;
         let metadata_docs: Vec<MetadataDoc> = cursor.try_collect().await?;
         let handles: Vec<String> = metadata_docs.into_iter().map(|x| x.handle).collect();
-
+        log::debug!("Retrieved artifact handles: {handles:#?}");
         Ok(handles)
     }
 
@@ -72,6 +69,7 @@ impl MetadataStore {
             .map(|x| x.metadata.object_handle.to_string())
             .collect();
 
+        log::debug!("Retrieved artifact handles with object handle: {handle}: {handles:#?}");
         Ok(handles)
     }
 }
