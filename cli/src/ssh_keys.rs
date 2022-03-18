@@ -72,7 +72,8 @@ fn fingerprint(filepath: &Path) -> Result<Fingerprint> {
 }
 
 fn convert_to_str(p: &Path) -> Result<&str> {
-    p.to_str().ok_or(anyhow!("Failed to convert path to str"))
+    p.to_str()
+        .ok_or_else(|| anyhow!("Failed to convert path to str"))
 }
 
 fn clone_nth(buf: &str, position: usize) -> Result<String> {
