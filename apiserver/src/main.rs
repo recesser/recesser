@@ -27,6 +27,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState {
         objstore: ObjectStorage::new(&s.objectstorage_addr)
+            .await
             .expect("Failed to connect to objectstorage"),
         database: Database::new(&s.database_addr)
             .await

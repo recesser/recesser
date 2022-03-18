@@ -2,9 +2,9 @@ use std::convert::AsRef;
 use std::path::Path;
 
 use anyhow::Result;
-use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
+use s3::{Bucket, BucketConfiguration};
 use tokio::fs;
 
 #[derive(Clone)]
@@ -13,21 +13,33 @@ pub struct ObjectStorage {
 }
 
 impl ObjectStorage {
-    pub fn new(addr: &str) -> Result<Self> {
+    pub async fn new(addr: &str) -> Result<Self> {
         let region = Region::Custom {
             region: String::new(),
             endpoint: String::from(addr),
         };
+
         let credentials = Credentials::from_env_specific(
             Some("RECESSER_OBJECTSTORAGE_USER"),
             Some("RECESSER_OBJECTSTORAGE_PASSWORD"),
             None,
             None,
         )?;
-        let objectstorage = ObjectStorage {
-            bucket: Bucket::new_with_path_style("artifacts", region, credentials)?,
+
+        let create_bucket_response = Bucket::create_with_path_style(
+            "artifacts",
+            region.clone(),
+            credentials.clone(),
+            BucketConfiguration::default(),
+        )
+        .await?;
+
+        let bucket = match create_bucket_response.success() {
+            true => create_bucket_response.bucket,
+            false => Bucket::new_with_path_style("artifacts", region, credentials)?,
         };
-        Ok(objectstorage)
+
+        Ok(ObjectStorage { bucket })
     }
 
     pub async fn upload_file(
