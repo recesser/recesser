@@ -26,7 +26,7 @@ impl KeyPair {
 
         let private_key = fs::read(priv_key_path)?;
         let public_key = fs::read(&pub_key_path)?;
-        let fingerprint = fingerprint(&pub_key_path)?;
+        let fingerprint = Fingerprint::new(&pub_key_path)?;
 
         Ok(Self {
             private_key,
@@ -53,22 +53,24 @@ fn keygen(workdir: &Path, filename: &str) -> Result<()> {
     Ok(())
 }
 
-fn fingerprint(filepath: &Path) -> Result<Fingerprint> {
-    let output = std::process::Command::new("ssh-keygen")
-        .args(["-f", convert_to_str(filepath)?])
-        .arg("-l")
-        .args(["-E", "sha256"])
-        .output()?;
-    if !output.status.success() {
-        anyhow::bail!(
-            "Failed to read fingerprint. Error: {}",
-            String::from_utf8(output.stderr)?
-        )
-    }
+impl Fingerprint {
+    pub fn new(filepath: &Path) -> Result<Self> {
+        let output = std::process::Command::new("ssh-keygen")
+            .args(["-f", convert_to_str(filepath)?])
+            .arg("-l")
+            .args(["-E", "sha256"])
+            .output()?;
+        if !output.status.success() {
+            anyhow::bail!(
+                "Failed to read fingerprint. Error: {}",
+                String::from_utf8(output.stderr)?
+            )
+        }
 
-    let buf = String::from_utf8(output.stdout)?;
-    let fingerprint = clone_nth(&buf, 1)?;
-    Ok(Fingerprint(fingerprint))
+        let buf = String::from_utf8(output.stdout)?;
+        let fingerprint = clone_nth(&buf, 1)?;
+        Ok(Self(fingerprint))
+    }
 }
 
 fn convert_to_str(p: &Path) -> Result<&str> {
