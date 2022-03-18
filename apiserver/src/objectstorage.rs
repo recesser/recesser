@@ -7,6 +7,8 @@ use s3::region::Region;
 use s3::{Bucket, BucketConfiguration};
 use tokio::fs;
 
+const BUCKET_NAME: &str = "artifacts";
+
 #[derive(Clone)]
 pub struct ObjectStorage {
     bucket: Bucket,
@@ -27,7 +29,7 @@ impl ObjectStorage {
         )?;
 
         let create_bucket_response = Bucket::create_with_path_style(
-            "artifacts",
+            BUCKET_NAME,
             region.clone(),
             credentials.clone(),
             BucketConfiguration::default(),
@@ -36,7 +38,7 @@ impl ObjectStorage {
 
         let bucket = match create_bucket_response.success() {
             true => create_bucket_response.bucket,
-            false => Bucket::new_with_path_style("artifacts", region, credentials)?,
+            false => Bucket::new_with_path_style(BUCKET_NAME, region, credentials)?,
         };
 
         Ok(ObjectStorage { bucket })
