@@ -1,3 +1,4 @@
+mod auth;
 mod database;
 mod error;
 mod objectstorage;
