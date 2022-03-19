@@ -2,9 +2,9 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
-use recesser_core::{metadata::Metadata, repository::NewRepository};
+use recesser_core::{metadata::Metadata, repository::NewRepository, repository::Repository};
 use reqwest::blocking::{self, multipart, Response};
-pub use reqwest::StatusCode;
+use reqwest::StatusCode;
 
 const A: &str = "/artifacts";
 const R: &str = "/repositories";
@@ -23,21 +23,28 @@ impl Client {
         }
     }
 
+    fn download_and_save_file(&self, url: &str, filepath: &Path) -> Result<()> {
+        let mut file_resp = self.client.get(url).send()?;
+        let mut file = fs::File::create(filepath)?;
+        file_resp.copy_to(&mut file)?;
+        Ok(())
+    }
+
     fn url(&self, path: &str) -> String {
         format!("{addr}{path}", addr = self.addr)
     }
 }
 
 pub trait ArtifactEndpoints {
-    fn upload_file(&self, handle: &str, metadata: Metadata, filepath: &Path) -> Result<Response>;
-    fn list(&self) -> Result<Response>;
-    fn download_file(&self, handle: &str) -> Result<Response>;
-    fn download_metadata(&self, handle: &str) -> Result<Response>;
-    fn delete(&self, handle: &str) -> Result<Response>;
+    fn upload_file(&self, handle: &str, metadata: Metadata, filepath: &Path) -> Result<()>;
+    fn list(&self) -> Result<Vec<String>>;
+    fn download_file(&self, handle: &str, filepath: &Path) -> Result<()>;
+    fn download_metadata(&self, handle: &str, filepath: &Path) -> Result<()>;
+    fn delete(&self, handle: &str) -> Result<()>;
 }
 
 impl ArtifactEndpoints for Client {
-    fn upload_file(&self, handle: &str, metadata: Metadata, filepath: &Path) -> Result<Response> {
+    fn upload_file(&self, handle: &str, metadata: Metadata, filepath: &Path) -> Result<()> {
         let file = fs::File::open(filepath)?;
 
         let form = multipart::Form::new()
@@ -46,107 +53,125 @@ impl ArtifactEndpoints for Client {
             .part("file", multipart::Part::reader(file));
 
         let resp = self.client.put(self.url(A)).multipart(form).send()?;
-        Ok(resp)
+        check_body(resp)?;
+        Ok(())
     }
 
-    fn list(&self) -> Result<Response> {
+    fn list(&self) -> Result<Vec<String>> {
         let resp = self.client.get(self.url(A)).send()?;
-
-        Ok(resp)
+        let body = check_body(resp)?;
+        let list: Vec<String> = serde_json::from_slice(&body)?;
+        Ok(list)
     }
 
-    fn download_file(&self, handle: &str) -> Result<Response> {
-        let resp = self
-            .client
-            .get(self.url(&format!("{A}/{handle}/file")))
-            .send()?;
-        Ok(resp)
+    fn download_file(&self, handle: &str, filepath: &Path) -> Result<()> {
+        self.download_and_save_file(&self.url(&format!("{A}/{handle}/file")), filepath)?;
+        Ok(())
     }
 
-    fn download_metadata(&self, handle: &str) -> Result<Response> {
-        let resp = self
-            .client
-            .get(self.url(&format!("{A}/{handle}/metadata")))
-            .send()?;
-        Ok(resp)
+    fn download_metadata(&self, handle: &str, filepath: &Path) -> Result<()> {
+        self.download_and_save_file(&self.url(&format!("{A}/{handle}/metadata")), filepath)?;
+        Ok(())
     }
 
-    fn delete(&self, handle: &str) -> Result<Response> {
+    fn delete(&self, handle: &str) -> Result<()> {
         let resp = self
             .client
             .delete(self.url(&format!("{A}/{handle}")))
             .send()?;
-        Ok(resp)
+        match resp.status() {
+            StatusCode::ACCEPTED => Ok(()),
+            StatusCode::NOT_FOUND => anyhow::bail!("Artifact {handle} doesn't exist."),
+            _ => anyhow::bail!("Internal error: {}", resp.text()?),
+        }
     }
 }
 
 pub trait RepositoryEndpoints {
-    fn register(&self, new_repository: &NewRepository) -> Result<Response>;
-    fn list(&self) -> Result<Response>;
-    fn show(&self, name: &str) -> Result<Response>;
-    fn credentials(&self, name: &str) -> Result<Response>;
-    fn delete(&self, name: &str) -> Result<Response>;
+    fn add(&self, new_repository: &NewRepository) -> Result<()>;
+    fn list(&self) -> Result<Vec<Repository>>;
+    fn show(&self, name: &str) -> Result<Repository>;
+    fn credentials(&self, name: &str) -> Result<()>;
+    fn delete(&self, name: &str) -> Result<()>;
 }
 
 impl RepositoryEndpoints for Client {
-    fn register(&self, new_repository: &NewRepository) -> Result<Response> {
+    fn add(&self, new_repository: &NewRepository) -> Result<()> {
         let resp = self
             .client
             .put(self.url(R))
             .body(serde_json::to_vec(new_repository)?)
             .send()?;
-        Ok(resp)
+        check_body(resp)?;
+        Ok(())
     }
 
-    fn list(&self) -> Result<Response> {
+    fn list(&self) -> Result<Vec<Repository>> {
         let resp = self.client.get(self.url(R)).send()?;
-        Ok(resp)
+        let body = check_body(resp)?;
+        let repos: Vec<Repository> = serde_json::from_slice(&body)?;
+        Ok(repos)
     }
 
-    fn show(&self, name: &str) -> Result<Response> {
+    fn show(&self, name: &str) -> Result<Repository> {
         let resp = self.client.get(self.url(&format!("{R}/{name}"))).send()?;
-        Ok(resp)
+        let body = check_body(resp)?;
+        let repo: Repository = serde_json::from_slice(&body)?;
+        Ok(repo)
     }
 
-    fn credentials(&self, name: &str) -> Result<Response> {
-        let resp = self
+    fn credentials(&self, name: &str) -> Result<()> {
+        let _resp = self
             .client
             .get(self.url(&format!("{R}/{name}/credentials")))
             .send()?;
-        Ok(resp)
+        Ok(())
     }
 
-    fn delete(&self, name: &str) -> Result<Response> {
+    fn delete(&self, name: &str) -> Result<()> {
         let resp = self
             .client
             .delete(self.url(&format!("{R}/{name}")))
             .send()?;
-        Ok(resp)
+
+        check_body(resp)?;
+        Ok(())
     }
 }
 
 pub trait UserEndpoints {
-    fn create(&self) -> Result<Response>;
-    fn list(&self) -> Result<Response>;
-    fn revoke(&self, id: &str) -> Result<Response>;
+    fn create(&self) -> Result<String>;
+    fn list(&self) -> Result<Vec<String>>;
+    fn revoke(&self, id: &str) -> Result<()>;
 }
 
 impl UserEndpoints for Client {
-    fn create(&self) -> Result<Response> {
+    fn create(&self) -> Result<String> {
         let resp = self.client.post(self.url(U)).send()?;
-        Ok(resp)
+        let body = check_body(resp)?;
+        Ok(String::from_utf8(body)?)
     }
 
-    fn list(&self) -> Result<Response> {
+    fn list(&self) -> Result<Vec<String>> {
         let resp = self.client.get(self.url(U)).send()?;
-        Ok(resp)
+        let body = check_body(resp)?;
+        let users: Vec<String> = serde_json::from_slice(&body)?;
+        Ok(users)
     }
 
-    fn revoke(&self, name: &str) -> Result<Response> {
+    fn revoke(&self, name: &str) -> Result<()> {
         let resp = self
             .client
             .delete(self.url(&format!("{U}/{name}")))
             .send()?;
-        Ok(resp)
+        check_body(resp)?;
+        Ok(())
     }
+}
+
+fn check_body(resp: Response) -> Result<Vec<u8>> {
+    if !resp.status().is_success() {
+        anyhow::bail!(resp.text()?)
+    }
+    Ok(resp.bytes()?.to_vec())
 }

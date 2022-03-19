@@ -4,7 +4,7 @@ use recesser_core::repository::NewRepository;
 use crate::commands::Global;
 use crate::http::RepositoryEndpoints;
 use crate::parser::RepositoryCommands;
-use crate::ssh::{self, KeyGen, ReadFingerprint};
+use crate::ssh::{self, KeyGen};
 
 impl RepositoryCommands {
     pub fn call(self, global: Global) -> Result<()> {
@@ -25,18 +25,28 @@ fn add(g: Global, name: &str) -> Result<()> {
         name: String::from(name),
         keypair,
     };
+
+    g.http.add(&new_repository)?;
     println!("{}", pub_key);
     Ok(())
 }
 
 fn list(g: Global) -> Result<()> {
+    let repos = g.http.list()?;
+    for r in repos {
+        println!("{}", r.name)
+    }
     Ok(())
 }
 
 fn show(g: Global, name: &str) -> Result<()> {
+    let repo = g.http.show(name)?;
+    println!("{:#?}", repo);
     Ok(())
 }
 
 fn remove(g: Global, name: &str) -> Result<()> {
+    g.http.delete(name)?;
+    println!("Successfully removed repository: {name}");
     Ok(())
 }

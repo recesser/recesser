@@ -22,9 +22,9 @@ pub enum Commands {
     /// Manage artifacts
     #[clap(subcommand)]
     Artifact(ArtifactCommands),
-    /// Manage repositories
+    /// Administrate system
     #[clap(subcommand)]
-    Repository(RepositoryCommands),
+    Admin(AdminCommands),
 }
 
 #[derive(Subcommand, Debug)]
@@ -47,6 +47,16 @@ pub enum ArtifactCommands {
 }
 
 #[derive(Subcommand, Debug)]
+pub enum AdminCommands {
+    /// Manage repositories
+    #[clap(subcommand)]
+    Repository(RepositoryCommands),
+    /// Manage users
+    #[clap(subcommand)]
+    User(UserCommands),
+}
+
+#[derive(Subcommand, Debug)]
 pub enum RepositoryCommands {
     /// Add repository
     Add { name: String },
@@ -56,4 +66,14 @@ pub enum RepositoryCommands {
     Show { name: String },
     /// Remove repository
     Remove { name: String },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum UserCommands {
+    /// Create user
+    Create,
+    /// List all users
+    List,
+    /// Revoke acccess for a user
+    Revoke { id: String },
 }

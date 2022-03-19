@@ -6,7 +6,7 @@ use recesser_core::handle::Handle;
 use recesser_core::metadata::Metadata;
 
 use crate::commands::Global;
-use crate::http::{ArtifactEndpoints, StatusCode};
+use crate::http::ArtifactEndpoints;
 use crate::parser::ArtifactCommands;
 
 impl ArtifactCommands {
@@ -53,38 +53,23 @@ fn read_custom_metadata(filepath: PathBuf) -> Result<serde_json::Value> {
 }
 
 fn list(g: Global) -> Result<()> {
-    let resp = g.http.list()?;
-    match resp.status().is_success() {
-        true => {
-            let list: Vec<String> = serde_json::from_slice(&resp.bytes()?)?;
-            for handle in list {
-                println!("{handle}");
-            }
-        }
-        false => println!("{}", resp.text()?),
+    let handles = g.http.list()?;
+    for handle in handles {
+        println!("{handle}");
     }
     Ok(())
 }
 
 fn download(g: Global, handle: &str) -> Result<()> {
-    let mut file_resp = g.http.download_file(handle)?;
-    let mut file = fs::File::create(handle)?;
-    file_resp.copy_to(&mut file)?;
-
-    let mut metadata_resp = g.http.download_metadata(handle)?;
-    let mut file = fs::File::create(format!("{handle}.meta.json"))?;
-    metadata_resp.copy_to(&mut file)?;
-
+    g.http.download_file(handle, Path::new(handle))?;
+    g.http
+        .download_metadata(handle, Path::new(&format!("{handle}.meta.json")))?;
     println!("Downloaded artifact: {handle}");
     Ok(())
 }
 
 fn delete(g: Global, handle: &str) -> Result<()> {
-    let resp = g.http.delete(handle)?;
-    match resp.status() {
-        StatusCode::ACCEPTED => println!("Successfully deleted artifact {handle}"),
-        StatusCode::NOT_FOUND => println!("Artifact {handle} doesn't exist."),
-        _ => println!("Internal error: {resp:?}"),
-    }
+    g.http.delete(handle)?;
+    println!("Successfully deleted artifact {handle}!");
     Ok(())
 }

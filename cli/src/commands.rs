@@ -1,13 +1,13 @@
 mod artifact;
-#[allow(unused)]
 mod repository;
+mod user;
 
 use std::io::Write;
 
 use anyhow::Result;
 
 use crate::http::Client;
-use crate::parser::{Cli, Commands};
+use crate::parser::{AdminCommands, Cli, Commands};
 use crate::settings::Settings;
 
 pub struct Global {
@@ -35,9 +35,19 @@ impl Cli {
 
         match self.commands {
             Commands::Artifact(cmd) => cmd.call(global)?,
-            Commands::Repository(cmd) => cmd.call(global)?,
+            Commands::Admin(cmd) => cmd.call(global)?,
             _ => println!("Not implemented"),
         };
+        Ok(())
+    }
+}
+
+impl AdminCommands {
+    pub fn call(self, global: Global) -> Result<()> {
+        match self {
+            AdminCommands::Repository(cmd) => cmd.call(global)?,
+            AdminCommands::User(cmd) => cmd.call(global)?,
+        }
         Ok(())
     }
 }
