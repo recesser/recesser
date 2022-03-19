@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(app_state.clone())
             .wrap(middleware::Logger::default())
-            .service(web::scope("/artifacts").configure(routes::config))
+            .configure(routes::config)
     })
     .bind(&s.addr)?
     .run()
