@@ -29,8 +29,13 @@ impl Cli {
             .format(|buf, record| writeln!(buf, "{}", record.args()))
             .init();
 
+        let addr = match self.host {
+            Some(addr) => addr,
+            None => s.addr,
+        };
+
         let global = Global {
-            http: Client::new(&s.addr),
+            http: Client::new(&addr),
         };
 
         match self.commands {

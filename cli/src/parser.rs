@@ -11,6 +11,9 @@ pub struct Cli {
     /// Print verbose output
     #[clap(short, long)]
     pub verbose: bool,
+    /// URL of system
+    #[clap(short, long)]
+    pub host: Option<String>,
     #[clap(subcommand)]
     pub commands: Commands,
 }
