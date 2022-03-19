@@ -5,19 +5,18 @@ mod workflow;
 use std::path::Path;
 
 use anyhow::Result;
-use recesser_core::repository::Repository;
+use recesser_core::repository::CommitID;
 
 use repository::LocalRepository;
 use workflow::Workflow;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let repository = Repository::new("recesser/recesser");
-    println!("{repository:#?}");
+    let url = "git@github.com:recesser/recesser.git";
     let private_key_path = Path::new("recesser.key");
-    let local_repository = LocalRepository::from_remote(&repository, private_key_path)?;
+    let local_repository = LocalRepository::from_remote(url, private_key_path)?;
     println!("{local_repository:#?}");
-    if repository.last_commit() != local_repository.last_commit() {
+    if &CommitID::new(None) != local_repository.last_commit() {
         println!("Last commit of repository has changed.");
     }
     let workflow = Workflow::from_repo(&local_repository).await?;

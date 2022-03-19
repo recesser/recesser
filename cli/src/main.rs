@@ -4,7 +4,7 @@ mod commands;
 mod http;
 mod parser;
 mod settings;
-mod ssh_keys;
+mod ssh;
 
 use std::process;
 

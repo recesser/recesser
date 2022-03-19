@@ -1,24 +1,22 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Repository {
-    name: String,
-    url: String,
-    last_commit: CommitID,
+pub struct NewRepository {
+    pub name: String,
+    pub keypair: KeyPair,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CommitID(pub Option<String>);
+pub struct Repository {
+    pub name: String,
+    pub url: String,
+    pub public_key: PublicKey,
+    pub last_commit: CommitID,
+}
 
 impl Repository {
-    pub fn new(name: &str) -> Self {
-        Self {
-            name: String::from(name),
-            url: format!("git@github.com:{name}.git"),
-            last_commit: CommitID(None),
-        }
-    }
-
     pub fn url(&self) -> &str {
         &self.url
     }
@@ -28,8 +26,38 @@ impl Repository {
     }
 }
 
-impl PartialEq for CommitID {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct CommitID(Option<String>);
+
+impl CommitID {
+    pub fn new(s: Option<String>) -> Self {
+        Self(s)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct KeyPair {
+    pub private_key: Vec<u8>,
+    pub public_key: PublicKey,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PublicKey {
+    pub public_key: Vec<u8>,
+    pub fingerprint: Fingerprint,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Fingerprint(String);
+
+impl Fingerprint {
+    pub fn new(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl fmt::Display for Fingerprint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

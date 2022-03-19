@@ -6,7 +6,7 @@ use recesser_core::handle::Handle;
 use recesser_core::metadata::Metadata;
 
 use crate::commands::Global;
-use crate::http::StatusCode;
+use crate::http::{ArtifactEndpoints, StatusCode};
 use crate::parser::ArtifactCommands;
 
 impl ArtifactCommands {
@@ -41,7 +41,7 @@ fn upload(g: Global, filepath: &Path, metadata_path: Option<PathBuf>) -> Result<
 
     let artifact_handle = Handle::compute_from_buf(&serde_json::to_vec(&metadata)?);
     g.http
-        .upload(&artifact_handle.to_string(), metadata, filepath)?;
+        .upload_file(&artifact_handle.to_string(), metadata, filepath)?;
     println!("{artifact_handle}");
 
     Ok(())
