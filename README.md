@@ -1,6 +1,6 @@
 # Recesser - Reproducible Computational Social Science Research
 
-## HTTP Server
+## Apiserver
 
 ### Artifacts
 
@@ -18,10 +18,21 @@
 | ------ | ------------------------------- | ------------------------------- |
 | PUT    | /repositories                   | Register repository             |
 | GET    | /repositories                   | List all repositories           |
+| GET    | /repositories/{id}              | Show repository                 |
 | GET    | /repositories/{id}/credentials  | Retrieve repository credentials |
 | DELETE | /repositories/{id}              | Deregister repository           |
 
+### Users
+
+| Method | URL                          | Description                |
+| ------ | ---------------------------- | -------------------------- |
+| PUT    | /users                       | Create new user            |
+| GET    | /users                       | List all users             |
+| DELETE | /users/{id}                  | Delete user                |
+
 ## Command Line Interface
+
+### Repository
 
 | Command  | Description                        |
 | -------- | ---------------------------------- |
