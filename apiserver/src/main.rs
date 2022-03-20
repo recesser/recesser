@@ -7,6 +7,7 @@ mod settings;
 
 use actix_web::{middleware, web, App, HttpServer};
 
+use auth::HmacKey;
 use database::Database;
 use objectstorage::ObjectStorage;
 use settings::Settings;
@@ -14,6 +15,7 @@ use settings::Settings;
 struct AppState {
     objstore: ObjectStorage,
     database: Database,
+    hmac_key: HmacKey,
 }
 
 #[actix_web::main]
@@ -26,6 +28,8 @@ async fn main() -> std::io::Result<()> {
 
     log::debug!("{s:#?}");
 
+    let rng = ring::rand::SystemRandom::new();
+
     let app_state = web::Data::new(AppState {
         objstore: ObjectStorage::new(&s.objectstorage_addr)
             .await
@@ -33,6 +37,7 @@ async fn main() -> std::io::Result<()> {
         database: Database::new(&s.database_addr)
             .await
             .expect("Failed to connect to database"),
+        hmac_key: HmacKey::new(&rng).expect("Failed to generate HMAC key"),
     });
 
     HttpServer::new(move || {

@@ -74,7 +74,7 @@ impl fmt::Display for Handle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let bytes = self.serialize();
         let mut buf = String::with_capacity(BASE64_HANDLE_LEN);
-        encoding::base64::encode(&bytes, &mut buf);
+        encoding::base64::encode_into_buf(&bytes, &mut buf);
         write!(f, "{buf}")
     }
 }
@@ -84,7 +84,7 @@ impl FromStr for Handle {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut buf = [0; HANDLE_LEN];
-        encoding::base64::decode(s, &mut buf)?;
+        encoding::base64::decode_into_slice(s, &mut buf)?;
         let handle = Handle::deserialize(&buf);
         Ok(handle)
     }

@@ -27,3 +27,9 @@ pub fn hash_file(filepath: &Path) -> Result<[u8; DIGEST_LEN]> {
 pub fn hash_buf(buf: &[u8]) -> [u8; DIGEST_LEN] {
     blake3::hash(buf).into()
 }
+
+pub fn compare_hashes_in_constant_time(first: [u8; 32], second: [u8; 32]) -> bool {
+    let first_hash = blake3::Hash::from(first);
+    let second_hash = blake3::Hash::from(second);
+    first_hash.eq(&second_hash)
+}

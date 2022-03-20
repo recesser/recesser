@@ -1,45 +1,184 @@
 use anyhow::Result;
 use ring::rand::SecureRandom;
-use serde::{Deserialize, Serialize};
+use ring::{digest, hmac, rand};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use uuid::Uuid;
 
 use recesser_core::encoding::base64;
+use recesser_core::hash::compare_hashes_in_constant_time;
+use recesser_core::hash::DIGEST_LEN;
 
-#[derive(Deserialize, Serialize, PartialEq)]
-struct Token {
-    id: [u8; 16],
-    secret: [u8; 32],
+#[derive(Clone)]
+pub struct HmacKey(hmac::Key);
+
+impl HmacKey {
+    pub fn new(rng: &dyn SecureRandom) -> Result<Self> {
+        let key_value: [u8; digest::SHA256_OUTPUT_LEN] = rand::generate(rng)?.expose();
+        let key = hmac::Key::new(hmac::HMAC_SHA256, key_value.as_ref());
+        Ok(Self(key))
+    }
+
+    pub fn key(&self) -> &hmac::Key {
+        &self.0
+    }
+}
+
+pub struct Token {
+    header: Header,
+    claims: Claims,
+    mac: Mac,
+}
+
+#[derive(Deserialize, Serialize)]
+struct Header {
+    alg: Algorithm,
+    typ: Type,
+}
+
+#[derive(Deserialize, Serialize)]
+enum Algorithm {
+    HS256,
+}
+
+#[derive(Deserialize, Serialize)]
+enum Type {
+    #[serde(rename = "JWT")]
+    Jwt,
+}
+
+#[derive(Deserialize, Serialize)]
+struct Claims {
+    id: String,
     scope: Scope,
 }
 
 #[derive(Deserialize, Serialize, PartialEq)]
-enum Scope {
+pub enum Scope {
     User,
     Admin,
+    Machine,
 }
 
+struct Mac([u8; DIGEST_LEN]);
+
 impl Token {
-    pub fn generate(rng: &dyn SecureRandom, scope: Scope) -> Result<Self> {
-        let mut secret = [0_u8; 32];
-        rng.fill(&mut secret)
-            .map_err(|_| anyhow::anyhow!("Failed to generate secret."))?;
+    pub fn create(scope: Scope, key: &HmacKey) -> Result<Self> {
+        let header = Header::new();
+        let claims = Claims::new(scope);
+        let mac = Mac::calculate(&header, &claims, key)?;
         Ok(Self {
-            id: *Uuid::new_v4().as_bytes(),
-            secret,
-            scope,
+            header,
+            claims,
+            mac,
         })
     }
 
-    pub fn to_base64(&self) -> Result<String> {
-        let b = bson::to_vec(self)?;
-        let mut buf = String::new();
-        base64::encode(&b, &mut buf);
-        Ok(buf)
+    pub fn validate(input: &str, key: &HmacKey) -> Result<Self> {
+        let token = Token::from_string(input)?;
+
+        let extracted_mac = &token.mac;
+        let calculated_mac = Mac::calculate(&token.header, &token.claims, key)?;
+        if !compare_hashes_in_constant_time(extracted_mac.0, calculated_mac.0) {
+            anyhow::bail!("Failed to validate token")
+        }
+
+        Ok(token)
     }
 
-    pub fn from_base64(input: &str) -> Result<Self> {
-        let mut buf: Vec<u8> = Vec::new();
-        base64::decode(input, &mut buf)?;
-        Ok(bson::from_slice(&buf)?)
+    pub fn to_string(&self) -> Result<String> {
+        Ok(format!(
+            "{}.{}.{}",
+            self.header.to_base64()?,
+            self.claims.to_base64()?,
+            self.mac.to_base64()
+        ))
+    }
+
+    fn from_string(input: &str) -> Result<Self> {
+        let mut split_input = input.split('.');
+
+        let header = match split_input.next() {
+            Some(s) => Header::from_base64(s)?,
+            None => anyhow::bail!("Failed to deserialize token header"),
+        };
+
+        let claims = match split_input.next() {
+            Some(s) => Claims::from_base64(s)?,
+            None => anyhow::bail!("Failed to deserialize token claims"),
+        };
+
+        let mac = match split_input.next() {
+            Some(s) => Mac::from_base64(s)?,
+            None => anyhow::bail!("Failed to deserialize token mac"),
+        };
+
+        Ok(Self {
+            header,
+            claims,
+            mac,
+        })
     }
 }
+
+impl Header {
+    fn new() -> Self {
+        Self {
+            alg: Algorithm::HS256,
+            typ: Type::Jwt,
+        }
+    }
+}
+
+impl Claims {
+    fn new(scope: Scope) -> Self {
+        let uuid = Uuid::new_v4();
+        let mut buf = Uuid::encode_buffer();
+        let encoded_uuid = uuid.to_hyphenated().encode_lower(&mut buf);
+        Self {
+            id: String::from(encoded_uuid),
+            scope,
+        }
+    }
+}
+
+impl Mac {
+    fn calculate(header: &Header, claims: &Claims, key: &HmacKey) -> Result<Mac> {
+        let buf = format!("{}.{}", header.to_base64()?, claims.to_base64()?);
+        let keyed_hash = hmac::sign(key.key(), buf.as_bytes());
+        Ok(Mac(keyed_hash.as_ref().try_into()?))
+    }
+
+    fn to_base64(&self) -> String {
+        let mut buf = String::with_capacity(46);
+        base64::encode_into_buf(&self.0, &mut buf);
+        buf
+    }
+
+    fn from_base64(input: &str) -> Result<Self> {
+        let mut buf = [0; DIGEST_LEN];
+        base64::decode_into_slice(input, &mut buf)?;
+        Ok(Self(buf))
+    }
+}
+
+trait ToBase64 {
+    fn to_base64(&self) -> Result<String>
+    where
+        Self: Serialize + Sized,
+    {
+        let b = serde_json::to_vec(self)?;
+        Ok(base64::encode(&b))
+    }
+
+    fn from_base64(input: &str) -> Result<Self>
+    where
+        Self: DeserializeOwned,
+    {
+        let b = base64::decode(input)?;
+        Ok(serde_json::from_slice(&b)?)
+    }
+}
+
+impl ToBase64 for Header {}
+
+impl ToBase64 for Claims {}

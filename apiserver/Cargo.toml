@@ -29,3 +29,4 @@ config = "0.11"
 ring = { version = "0.16", default-features = false, features = ["std", "dev_urandom_fallback"] }
 uuid = { version = "0.8", default-features = false, features = ["v4"] }
 bson = { version = "2.1", default-features = false }
+blake3 = "1.3"
