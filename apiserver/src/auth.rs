@@ -5,7 +5,6 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use uuid::Uuid;
 
 use recesser_core::encoding::base64;
-use recesser_core::hash::compare_hashes_in_constant_time;
 use recesser_core::hash::DIGEST_LEN;
 
 #[derive(Clone)]
@@ -65,7 +64,7 @@ impl Token {
     pub fn create(scope: Scope, key: &HmacKey) -> Result<Self> {
         let header = Header::new();
         let claims = Claims::new(scope);
-        let mac = Mac::calculate(&header, &claims, key)?;
+        let mac = Mac::calculate(key, payload(&header, &claims)?.as_bytes())?;
         Ok(Self {
             header,
             claims,
@@ -75,13 +74,8 @@ impl Token {
 
     pub fn validate(input: &str, key: &HmacKey) -> Result<Self> {
         let token = Token::from_string(input)?;
-
         let extracted_mac = &token.mac;
-        let calculated_mac = Mac::calculate(&token.header, &token.claims, key)?;
-        if !compare_hashes_in_constant_time(extracted_mac.0, calculated_mac.0) {
-            anyhow::bail!("Failed to validate token")
-        }
-
+        extracted_mac.verify(key, payload(&token.header, &token.claims)?.as_bytes())?;
         Ok(token)
     }
 
@@ -120,6 +114,10 @@ impl Token {
     }
 }
 
+fn payload(header: &Header, claims: &Claims) -> Result<String> {
+    Ok(format!("{}.{}", header.to_base64()?, claims.to_base64()?))
+}
+
 impl Header {
     fn new() -> Self {
         Self {
@@ -142,10 +140,14 @@ impl Claims {
 }
 
 impl Mac {
-    fn calculate(header: &Header, claims: &Claims, key: &HmacKey) -> Result<Mac> {
-        let buf = format!("{}.{}", header.to_base64()?, claims.to_base64()?);
-        let keyed_hash = hmac::sign(key.key(), buf.as_bytes());
+    fn calculate(key: &HmacKey, payload: &[u8]) -> Result<Mac> {
+        let keyed_hash = hmac::sign(key.key(), payload);
         Ok(Mac(keyed_hash.as_ref().try_into()?))
+    }
+
+    fn verify(&self, key: &HmacKey, payload: &[u8]) -> Result<()> {
+        hmac::verify(key.key(), payload, &self.0)?;
+        Ok(())
     }
 
     fn to_base64(&self) -> String {
