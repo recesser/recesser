@@ -28,3 +28,9 @@ services:
     image: mongo
     ports:
       - 27017:27017
+  vault:
+    image: vault
+    ports:
+      - 8200:8200
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: vault123
