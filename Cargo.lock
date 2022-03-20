@@ -453,7 +453,6 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits 0.2.14",
- "serde 1.0.136",
  "time 0.1.43",
  "winapi",
 ]
@@ -1740,7 +1739,6 @@ dependencies = [
  "actix-multipart",
  "actix-web",
  "anyhow",
- "bson",
  "config",
  "env_logger",
  "futures-util",
@@ -1770,8 +1768,6 @@ dependencies = [
  "reqwest",
  "serde 1.0.136",
  "serde_json",
- "strum",
- "strum_macros",
  "tempfile",
 ]
 
@@ -1782,7 +1778,6 @@ dependencies = [
  "anyhow",
  "base64",
  "blake3",
- "chrono",
  "serde 1.0.136",
  "serde_json",
  "serde_with",

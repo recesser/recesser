@@ -1,5 +1,6 @@
 use anyhow::Result;
 use futures_util::TryStreamExt;
+use mongodb::bson;
 
 use recesser_core::user::User;
 
