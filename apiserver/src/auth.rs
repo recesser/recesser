@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use recesser_core::encoding::base64;
 use recesser_core::hash::DIGEST_LEN;
+use recesser_core::user::{Scope, User};
 
 #[derive(Clone)]
 pub struct HmacKey(hmac::Key);
@@ -51,13 +52,6 @@ struct Claims {
     scope: Scope,
 }
 
-#[derive(Deserialize, Serialize, PartialEq)]
-pub enum Scope {
-    User,
-    Admin,
-    Machine,
-}
-
 struct Mac([u8; DIGEST_LEN]);
 
 impl Token {
@@ -86,6 +80,13 @@ impl Token {
             self.claims.to_base64()?,
             self.mac.to_base64()
         ))
+    }
+
+    pub fn extract_user(&self) -> User {
+        User {
+            id: String::from(&self.claims.id),
+            scope: self.claims.scope.clone(),
+        }
     }
 
     fn from_string(input: &str) -> Result<Self> {

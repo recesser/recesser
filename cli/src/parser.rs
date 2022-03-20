@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use recesser_core::user::Scope;
 
 #[derive(Parser, Debug)]
 #[clap(name = "rcssr", version)]
@@ -74,7 +75,7 @@ pub enum RepositoryCommands {
 #[derive(Subcommand, Debug)]
 pub enum UserCommands {
     /// Create user
-    Create,
+    Create { scope: Scope },
     /// List all users
     List,
     /// Revoke acccess for a user

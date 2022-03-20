@@ -1,16 +1,19 @@
 mod metadata;
 mod repository;
+mod user;
 
 use anyhow::Result;
 use thiserror::Error;
 
 use metadata::MetadataStore;
 use repository::RepositoryStore;
+use user::UserStore;
 
 #[derive(Clone)]
 pub struct Database {
     pub repositories: RepositoryStore,
     pub metadata: MetadataStore,
+    pub user: UserStore,
 }
 
 impl Database {
@@ -21,6 +24,7 @@ impl Database {
         Ok(Self {
             repositories: RepositoryStore::new(db.collection("repositories")),
             metadata: MetadataStore::new(db.collection("metadata")),
+            user: UserStore::new(db.collection("user")),
         })
     }
 }

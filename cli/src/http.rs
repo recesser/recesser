@@ -2,7 +2,9 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
-use recesser_core::{metadata::Metadata, repository::NewRepository, repository::Repository};
+use recesser_core::metadata::Metadata;
+use recesser_core::repository::{NewRepository, Repository};
+use recesser_core::user::{NewUser, Scope, User};
 use reqwest::blocking::{self, multipart, Response};
 use reqwest::StatusCode;
 
@@ -97,11 +99,7 @@ pub trait RepositoryEndpoints {
 
 impl RepositoryEndpoints for Client {
     fn add(&self, new_repository: &NewRepository) -> Result<()> {
-        let resp = self
-            .client
-            .put(self.url(R))
-            .body(serde_json::to_vec(new_repository)?)
-            .send()?;
+        let resp = self.client.put(self.url(R)).json(new_repository).send()?;
         check_body(resp)?;
         Ok(())
     }
@@ -140,22 +138,26 @@ impl RepositoryEndpoints for Client {
 }
 
 pub trait UserEndpoints {
-    fn create(&self) -> Result<String>;
-    fn list(&self) -> Result<Vec<String>>;
+    fn create(&self, scope: Scope) -> Result<String>;
+    fn list(&self) -> Result<Vec<User>>;
     fn revoke(&self, id: &str) -> Result<()>;
 }
 
 impl UserEndpoints for Client {
-    fn create(&self) -> Result<String> {
-        let resp = self.client.post(self.url(U)).send()?;
+    fn create(&self, scope: Scope) -> Result<String> {
+        let resp = self
+            .client
+            .post(self.url(U))
+            .json(&NewUser::new(scope))
+            .send()?;
         let body = check_body(resp)?;
         Ok(String::from_utf8(body)?)
     }
 
-    fn list(&self) -> Result<Vec<String>> {
+    fn list(&self) -> Result<Vec<User>> {
         let resp = self.client.get(self.url(U)).send()?;
         let body = check_body(resp)?;
-        let users: Vec<String> = serde_json::from_slice(&body)?;
+        let users: Vec<User> = serde_json::from_slice(&body)?;
         Ok(users)
     }
 
