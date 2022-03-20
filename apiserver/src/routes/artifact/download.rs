@@ -15,15 +15,10 @@ async fn download_file(
 
     let metadata_store = &app_state.database.metadata;
 
-    let metadata =
-        metadata_store.retrieve(&handle).await.map_err(|e| match e
-            .downcast::<database::HandleNotFoundError>()
-        {
-            Ok(err) => UserError::NotFound {
-                path: format!("artifacts/{}", err.handle),
-            },
-            _ => UserError::Internal,
-        })?;
+    let metadata = metadata_store
+        .retrieve(&handle)
+        .await
+        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "artifacts"))?;
 
     let file = tempfile::NamedTempFile::new()?;
     let filepath = file.path();
@@ -48,15 +43,10 @@ async fn download_metadata(
 
     let metadata_store = &app_state.database.metadata;
 
-    let metadata =
-        metadata_store.retrieve(&handle).await.map_err(|e| match e
-            .downcast::<database::HandleNotFoundError>()
-        {
-            Ok(err) => UserError::NotFound {
-                path: format!("artifacts/{}", err.handle),
-            },
-            _ => UserError::Internal,
-        })?;
+    let metadata = metadata_store
+        .retrieve(&handle)
+        .await
+        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "artifacts"))?;
 
     Ok(web::Json(metadata))
 }

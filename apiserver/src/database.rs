@@ -5,6 +5,7 @@ mod user;
 use anyhow::Result;
 use thiserror::Error;
 
+use crate::error::UserError;
 use metadata::MetadataStore;
 use repository::RepositoryStore;
 use user::UserStore;
@@ -30,15 +31,22 @@ impl Database {
 }
 
 #[derive(Debug, Error)]
-#[error("Handle {handle} doesn't exist.")]
-pub struct HandleNotFoundError {
-    pub handle: String,
+#[error("Handle {id} doesn't exist.")]
+pub struct DocumentNotFoundError {
+    pub id: String,
 }
 
-impl HandleNotFoundError {
-    pub fn new(handle: &str) -> Self {
+impl DocumentNotFoundError {
+    pub fn new(id: &str) -> Self {
         Self {
-            handle: String::from(handle),
+            id: String::from(id),
+        }
+    }
+
+    pub fn downcast(e: Box<dyn std::error::Error>, path: &str) -> UserError {
+        match e.downcast::<Self>() {
+            Ok(e) => UserError::not_found(&format!("{path}/{}", e.id), e),
+            _ => UserError::Internal,
         }
     }
 }

@@ -20,14 +20,14 @@ impl RepositoryCommands {
 
 fn add(g: Global, name: &str) -> Result<()> {
     let keypair = ssh::KeyPair::generate(name)?;
-    let pub_key = String::from_utf8(keypair.public_key.public_key.clone())?;
+    let pub_key = keypair.public_key.public_key.clone();
     let new_repository = NewRepository {
         name: String::from(name),
         keypair,
     };
 
     g.http.add(&new_repository)?;
-    println!("{}", pub_key);
+    print!("{}", pub_key);
     Ok(())
 }
 

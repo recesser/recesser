@@ -18,8 +18,8 @@ impl KeyGen for KeyPair {
         let priv_key_path = dir.path().join(filename);
         let pub_key_path = priv_key_path.with_extension("pub");
 
-        let private_key = fs::read(priv_key_path)?;
-        let pub_key = fs::read(&pub_key_path)?;
+        let private_key = fs::read_to_string(priv_key_path)?;
+        let pub_key = fs::read_to_string(&pub_key_path)?;
         let fingerprint = Fingerprint::read(&pub_key_path)?;
 
         let public_key = PublicKey {
@@ -41,7 +41,7 @@ fn keygen_command(workdir: &Path, filename: &str) -> Result<()> {
         .args(["-f", filename])
         .args(["-t", "ed25519"])
         .args(["-N", "''"])
-        .args(["-C", "''"])
+        .args(["-C", "RecesserMachineKey"])
         .output()?;
     if !output.status.success() {
         anyhow::bail!(

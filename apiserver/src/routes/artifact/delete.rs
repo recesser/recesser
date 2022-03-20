@@ -16,10 +16,7 @@ async fn delete(
     let object_handle = metadata_store
         .retrieve(&handle)
         .await
-        .map_err(|e| match e.downcast::<database::HandleNotFoundError>() {
-            Ok(e) => UserError::not_found(&format!("artifacts/{}", &e.handle), e),
-            Err(e) => UserError::internal(e),
-        })?
+        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "artifacts"))?
         .object_handle
         .to_string();
 

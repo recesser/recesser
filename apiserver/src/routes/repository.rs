@@ -1,46 +1,91 @@
-use actix_web::{delete, get, put, web, Error};
-use recesser_core::repository::{CommitID, Repository};
+use actix_web::{delete, get, put, web, Error, HttpResponse};
+use recesser_core::repository::{NewRepository, Repository};
 
+use crate::database;
+use crate::error::UserError;
 use crate::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(register)
+    cfg.service(add)
         .service(list)
         .service(show)
         .service(credentials)
-        .service(delete);
+        .service(remove);
 }
 
 #[put("")]
-async fn register(app_state: web::Data<AppState>) -> Result<web::Json<Vec<String>>, Error> {
-    Ok(web::Json(vec![String::from("String")]))
+async fn add(
+    new_user: web::Json<NewRepository>,
+    app_state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let new_repository = new_user.into_inner();
+    let repository = Repository::from_new_repository(new_repository);
+
+    app_state
+        .database
+        .repositories
+        .add(repository)
+        .await
+        .map_err(UserError::internal)?;
+
+    Ok(HttpResponse::Ok().into())
 }
 
 #[get("")]
-async fn list(app_state: web::Data<AppState>) -> Result<web::Json<Vec<String>>, Error> {
-    Ok(web::Json(vec![String::from("String")]))
+async fn list(app_state: web::Data<AppState>) -> Result<web::Json<Vec<Repository>>, Error> {
+    let repositories = app_state
+        .database
+        .repositories
+        .list()
+        .await
+        .map_err(UserError::internal)?;
+    Ok(web::Json(repositories))
 }
 
-#[get("/{name}")]
+#[get("/{organisation}/{repository}")]
 async fn show(
-    name: web::Path<String>,
+    path: web::Path<(String, String)>,
     app_state: web::Data<AppState>,
-) -> Result<web::Json<Vec<String>>, Error> {
-    Ok(web::Json(vec![String::from("String")]))
+) -> Result<web::Json<Repository>, Error> {
+    let name = extract_name(path);
+
+    let repository = app_state
+        .database
+        .repositories
+        .show(&name)
+        .await
+        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "repositories"))?;
+
+    Ok(web::Json(repository))
 }
 
-#[get("/{name}/credentials")]
+#[get("/{organisation}/{repository}/credentials")]
 async fn credentials(
-    name: web::Path<String>,
-    app_state: web::Data<AppState>,
+    path: web::Path<(String, String)>,
+    _app_state: web::Data<AppState>,
 ) -> Result<web::Json<Vec<String>>, Error> {
-    Ok(web::Json(vec![String::from("String")]))
+    let _name = extract_name(path);
+    Ok(web::Json(vec![String::from("Not implemented")]))
 }
 
-#[delete("/{name}")]
-async fn delete(
-    name: web::Path<String>,
+#[delete("/{organisation}/{repository}")]
+async fn remove(
+    path: web::Path<(String, String)>,
     app_state: web::Data<AppState>,
-) -> Result<web::Json<Vec<String>>, Error> {
-    Ok(web::Json(vec![String::from("String")]))
+) -> Result<HttpResponse, Error> {
+    let name = extract_name(path);
+
+    app_state
+        .database
+        .repositories
+        .remove(&name)
+        .await
+        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "repositories"))?;
+
+    Ok(HttpResponse::Ok().into())
+}
+
+fn extract_name(path: web::Path<(String, String)>) -> String {
+    let path = path.into_inner();
+    format!("{}/{}", path.0, path.1)
 }

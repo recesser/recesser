@@ -4,7 +4,7 @@ use mongodb::bson;
 use recesser_core::metadata::Metadata;
 use serde::{Deserialize, Serialize};
 
-use super::HandleNotFoundError;
+use super::DocumentNotFoundError;
 
 #[derive(Clone)]
 pub struct MetadataStore {
@@ -37,7 +37,7 @@ impl MetadataStore {
             .collection
             .find_one(filter_handle(handle), None)
             .await?
-            .ok_or_else(|| HandleNotFoundError::new(handle))?;
+            .ok_or_else(|| DocumentNotFoundError::new(handle))?;
         log::debug!("Retrieved metadata: {:#?}", metadata_doc.metadata);
         Ok(metadata_doc.metadata)
     }
