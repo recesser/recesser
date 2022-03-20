@@ -16,7 +16,7 @@ async fn create(
     app_state: web::Data<AppState>,
 ) -> Result<String, Error> {
     let new_user = new_user.into_inner();
-    println!("{new_user:#?}");
+
     let token = auth::Token::create(new_user.scope.clone(), &app_state.hmac_key)
         .map_err(UserError::internal)?;
 
