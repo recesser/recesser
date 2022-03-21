@@ -3,7 +3,6 @@
 mod commands;
 mod http;
 mod parser;
-mod settings;
 mod ssh;
 
 use std::process;

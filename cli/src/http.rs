@@ -6,6 +6,7 @@ use recesser_core::metadata::Metadata;
 use recesser_core::repository::{NewRepository, Repository};
 use recesser_core::user::{NewUser, Scope, User};
 use reqwest::blocking::{self, multipart, Response};
+use reqwest::header;
 use reqwest::StatusCode;
 
 const A: &str = "/artifacts";
@@ -18,10 +19,18 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(addr: &str) -> Self {
+    pub fn new(addr: &str, token: String) -> Self {
+        let mut headers = header::HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            format!("Bearer {}", token)
+                .try_into()
+                .expect("Failed to set Authorization header"),
+        );
+        let cb = blocking::Client::builder().default_headers(headers);
         Self {
             addr: String::from(addr),
-            client: blocking::Client::new(),
+            client: cb.build().expect("Failed to create client"),
         }
     }
 

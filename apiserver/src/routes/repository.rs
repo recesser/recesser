@@ -1,8 +1,10 @@
-use actix_web::{delete, get, put, web, Error, HttpResponse};
+use actix_web::{delete, get, put, web, Error, HttpRequest, HttpResponse};
 use recesser_core::repository::{NewRepository, Repository};
+use recesser_core::user::Scope;
 
 use crate::database;
 use crate::error::UserError;
+use crate::routes::validate_scope;
 use crate::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -61,9 +63,11 @@ async fn show(
 
 #[get("/{organisation}/{repository}/credentials")]
 async fn credentials(
+    req: HttpRequest,
     path: web::Path<(String, String)>,
     _app_state: web::Data<AppState>,
 ) -> Result<web::Json<Vec<String>>, Error> {
+    validate_scope(req, Scope::Machine)?;
     let _name = extract_name(path);
     Ok(web::Json(vec![String::from("Not implemented")]))
 }

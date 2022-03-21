@@ -8,13 +8,14 @@ mod routes;
 mod settings;
 
 use actix_web::{middleware, web, App, HttpServer};
+use recesser_core::user::Scope;
 
-use auth::HmacKey;
+use auth::{HmacKey, Token};
 use database::Database;
 use objectstorage::ObjectStorage;
 use settings::Settings;
 
-struct AppState {
+pub struct AppState {
     objstore: ObjectStorage,
     database: Database,
     hmac_key: HmacKey,
@@ -31,6 +32,13 @@ async fn main() -> std::io::Result<()> {
     log::debug!("{s:#?}");
 
     let rng = ring::rand::SystemRandom::new();
+    let hmac_key = HmacKey::new(&rng).expect("Failed to generate HMAC key");
+    let initial_token =
+        Token::create(Scope::Admin, &hmac_key).expect("Failed to generate initial token");
+    log::info!(
+        "{}",
+        initial_token.to_string().expect("Failed to print token")
+    );
 
     let app_state = web::Data::new(AppState {
         objstore: ObjectStorage::new(&s.objectstorage_addr)
@@ -39,7 +47,7 @@ async fn main() -> std::io::Result<()> {
         database: Database::new(&s.database_addr)
             .await
             .expect("Failed to connect to database"),
-        hmac_key: HmacKey::new(&rng).expect("Failed to generate HMAC key"),
+        hmac_key,
     });
 
     HttpServer::new(move || {

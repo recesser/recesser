@@ -3,8 +3,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum UserError {
-    #[error("Request is not formatted properly.^")]
+    #[error("Request is not formatted properly.")]
     BadRequest,
+    #[error("Access forbidden.")]
+    Unauthorized,
     #[error("Resource at {path} doesn't exist.")]
     NotFound { path: String },
     #[error("An internal error occurred. Please try again later.")]
@@ -15,6 +17,11 @@ impl UserError {
     pub fn internal(e: anyhow::Error) -> Self {
         log::debug!("{e}");
         UserError::Internal
+    }
+
+    pub fn unauthorized(e: anyhow::Error) -> Self {
+        log::debug!("{e}");
+        UserError::Unauthorized
     }
 
     pub fn not_found(path: &str, e: impl std::error::Error) -> Self {
@@ -40,6 +47,7 @@ impl actix_web::error::ResponseError for UserError {
     fn status_code(&self) -> http::StatusCode {
         match *self {
             UserError::BadRequest => http::StatusCode::BAD_REQUEST,
+            UserError::Unauthorized => http::StatusCode::UNAUTHORIZED,
             UserError::NotFound { .. } => http::StatusCode::NOT_FOUND,
             UserError::Internal { .. } => http::StatusCode::INTERNAL_SERVER_ERROR,
         }

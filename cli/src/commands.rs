@@ -8,7 +8,6 @@ use anyhow::Result;
 
 use crate::http::Client;
 use crate::parser::{AdminCommands, Cli, Commands};
-use crate::settings::Settings;
 
 pub struct Global {
     http: Client,
@@ -16,8 +15,6 @@ pub struct Global {
 
 impl Cli {
     pub fn call(self) -> Result<()> {
-        let s = Settings::new(&self.config)?;
-
         env_logger::Builder::new()
             .filter(
                 None,
@@ -31,17 +28,30 @@ impl Cli {
 
         let addr = match self.host {
             Some(addr) => addr,
-            None => s.addr,
+            None => std::env::var("RECESSER_ADDR").map_err(|_| {
+                anyhow::anyhow!(
+                    "Host address needs to be specified via environment or as command line argument"
+                )
+            })?,
+        };
+
+        let token = match self.token {
+            Some(token) => token,
+            None => std::env::var("RECESSER_TOKEN").map_err(|_| {
+                anyhow::anyhow!(
+                    "Access token needs to be specified via environment or as command line argument"
+                )
+            })?,
         };
 
         let global = Global {
-            http: Client::new(&addr),
+            http: Client::new(&addr, token),
         };
 
         match self.commands {
             Commands::Artifact(cmd) => cmd.call(global)?,
+            Commands::Repository(cmd) => cmd.call(global)?,
             Commands::Admin(cmd) => cmd.call(global)?,
-            _ => println!("Not implemented"),
         };
         Ok(())
     }
@@ -50,7 +60,6 @@ impl Cli {
 impl AdminCommands {
     pub fn call(self, global: Global) -> Result<()> {
         match self {
-            AdminCommands::Repository(cmd) => cmd.call(global)?,
             AdminCommands::User(cmd) => cmd.call(global)?,
         }
         Ok(())

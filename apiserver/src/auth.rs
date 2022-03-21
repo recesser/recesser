@@ -8,6 +8,8 @@ use recesser_core::encoding::base64;
 use recesser_core::hash::DIGEST_LEN;
 use recesser_core::user::{Scope, User};
 
+use crate::error::UserError;
+
 #[derive(Clone)]
 pub struct HmacKey(hmac::Key);
 
@@ -71,6 +73,13 @@ impl Token {
         let extracted_mac = &token.mac;
         extracted_mac.verify(key, payload(&token.header, &token.claims)?.as_bytes())?;
         Ok(token)
+    }
+
+    pub fn validate_scope(&self, scope: Scope) -> std::result::Result<(), UserError> {
+        if self.claims.scope != scope {
+            return Err(UserError::Unauthorized);
+        }
+        Ok(())
     }
 
     pub fn to_string(&self) -> Result<String> {

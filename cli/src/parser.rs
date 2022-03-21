@@ -15,17 +15,21 @@ pub struct Cli {
     /// URL of system
     #[clap(short, long)]
     pub host: Option<String>,
+    /// Access token
+    #[clap(short, long)]
+    pub token: Option<String>,
     #[clap(subcommand)]
     pub commands: Commands,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Get and set configuration options
-    Config { key: String, value: Option<String> },
     /// Manage artifacts
     #[clap(subcommand)]
     Artifact(ArtifactCommands),
+    /// Manage repositories
+    #[clap(subcommand)]
+    Repository(RepositoryCommands),
     /// Administrate system
     #[clap(subcommand)]
     Admin(AdminCommands),
@@ -51,16 +55,6 @@ pub enum ArtifactCommands {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum AdminCommands {
-    /// Manage repositories
-    #[clap(subcommand)]
-    Repository(RepositoryCommands),
-    /// Manage users
-    #[clap(subcommand)]
-    User(UserCommands),
-}
-
-#[derive(Subcommand, Debug)]
 pub enum RepositoryCommands {
     /// Add repository
     Add { name: String },
@@ -70,6 +64,13 @@ pub enum RepositoryCommands {
     Show { name: String },
     /// Remove repository
     Remove { name: String },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AdminCommands {
+    /// Manage users
+    #[clap(subcommand)]
+    User(UserCommands),
 }
 
 #[derive(Subcommand, Debug)]
