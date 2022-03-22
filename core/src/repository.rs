@@ -18,9 +18,13 @@ pub struct Repository {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KeyPair {
-    pub private_key: String,
+    pub private_key: PrivateKey,
     pub public_key: PublicKey,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(transparent)]
+pub struct PrivateKey(String);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicKey {
@@ -35,12 +39,12 @@ pub struct Fingerprint(String);
 pub struct CommitID(Option<String>);
 
 impl Repository {
-    pub fn from_new_repository(new_repository: NewRepository) -> Self {
-        let url = format!("git@github.com:{}.git", new_repository.name);
+    pub fn new(name: &str, public_key: PublicKey) -> Self {
+        let url = format!("git@github.com:{}.git", name);
         Self {
-            name: new_repository.name,
+            name: name.to_string(),
             url,
-            public_key: new_repository.keypair.public_key,
+            public_key,
             last_commit: CommitID::new(None),
         }
     }
@@ -51,6 +55,16 @@ impl Repository {
 
     pub fn last_commit(&self) -> &CommitID {
         &self.last_commit
+    }
+}
+
+impl PrivateKey {
+    pub fn new(s: String) -> Self {
+        Self(s)
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 

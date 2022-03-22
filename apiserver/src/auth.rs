@@ -1,6 +1,6 @@
 use anyhow::Result;
 use ring::rand::SecureRandom;
-use ring::{digest, hmac, rand};
+use ring::{digest::SHA256_OUTPUT_LEN, hmac, rand};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -14,10 +14,12 @@ use crate::error::UserError;
 pub struct HmacKey(hmac::Key);
 
 impl HmacKey {
-    pub fn new(rng: &dyn SecureRandom) -> Result<Self> {
-        let key_value: [u8; digest::SHA256_OUTPUT_LEN] = rand::generate(rng)?.expose();
-        let key = hmac::Key::new(hmac::HMAC_SHA256, key_value.as_ref());
-        Ok(Self(key))
+    pub fn new(key_value: &[u8; SHA256_OUTPUT_LEN]) -> Self {
+        Self(hmac::Key::new(hmac::HMAC_SHA256, key_value))
+    }
+
+    pub fn generate_key_value(rng: &dyn SecureRandom) -> Result<[u8; SHA256_OUTPUT_LEN]> {
+        Ok(rand::generate(rng)?.expose())
     }
 
     pub fn key(&self) -> &hmac::Key {
@@ -54,6 +56,8 @@ struct Claims {
     scope: Scope,
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(transparent)]
 struct Mac([u8; DIGEST_LEN]);
 
 impl Token {
@@ -87,7 +91,7 @@ impl Token {
             "{}.{}.{}",
             self.header.to_base64()?,
             self.claims.to_base64()?,
-            self.mac.to_base64()
+            self.mac.to_base64()?
         ))
     }
 
@@ -159,18 +163,6 @@ impl Mac {
         hmac::verify(key.key(), payload, &self.0)?;
         Ok(())
     }
-
-    fn to_base64(&self) -> String {
-        let mut buf = String::with_capacity(46);
-        base64::encode_into_buf(&self.0, &mut buf);
-        buf
-    }
-
-    fn from_base64(input: &str) -> Result<Self> {
-        let mut buf = [0; DIGEST_LEN];
-        base64::decode_into_slice(input, &mut buf)?;
-        Ok(Self(buf))
-    }
 }
 
 trait ToBase64 {
@@ -194,3 +186,5 @@ trait ToBase64 {
 impl ToBase64 for Header {}
 
 impl ToBase64 for Claims {}
+
+impl ToBase64 for Mac {}

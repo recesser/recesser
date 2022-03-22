@@ -1,5 +1,6 @@
+use actix_web::http::header;
 use actix_web::{delete, get, put, web, Error, HttpRequest, HttpResponse};
-use recesser_core::repository::{NewRepository, Repository};
+use recesser_core::repository::{KeyPair, NewRepository, Repository};
 use recesser_core::user::Scope;
 
 use crate::database;
@@ -21,8 +22,19 @@ async fn add(
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     let new_repository = new_user.into_inner();
-    let repository = Repository::from_new_repository(new_repository);
 
+    let fingerprint = new_repository.keypair.public_key.fingerprint.to_string();
+    let KeyPair {
+        private_key,
+        public_key,
+    } = new_repository.keypair;
+    app_state
+        .secstore
+        .store_ssh_key(&fingerprint, private_key)
+        .await
+        .map_err(UserError::internal)?;
+
+    let repository = Repository::new(&new_repository.name, public_key);
     app_state
         .database
         .repositories
@@ -65,11 +77,28 @@ async fn show(
 async fn credentials(
     req: HttpRequest,
     path: web::Path<(String, String)>,
-    _app_state: web::Data<AppState>,
-) -> Result<web::Json<Vec<String>>, Error> {
+    app_state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
     validate_scope(req, Scope::Machine)?;
-    let _name = extract_name(path);
-    Ok(web::Json(vec![String::from("Not implemented")]))
+    let name = extract_name(path);
+
+    let repository = app_state
+        .database
+        .repositories
+        .show(&name)
+        .await
+        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "repositories"))?;
+    let fingerprint = repository.public_key.fingerprint.to_string();
+
+    let private_key = app_state
+        .secstore
+        .get_ssh_key(&fingerprint)
+        .await
+        .map_err(UserError::internal)?;
+
+    Ok(HttpResponse::Ok()
+        .insert_header(header::ContentType(mime::APPLICATION_OCTET_STREAM))
+        .body(private_key))
 }
 
 #[delete("/{organisation}/{repository}")]

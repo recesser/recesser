@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-pub use recesser_core::repository::{Fingerprint, KeyPair, PublicKey};
+pub use recesser_core::repository::{Fingerprint, KeyPair, PrivateKey, PublicKey};
 
 pub trait KeyGen {
     fn generate(name: &str) -> Result<KeyPair>;
@@ -18,13 +18,10 @@ impl KeyGen for KeyPair {
         let priv_key_path = dir.path().join(filename);
         let pub_key_path = priv_key_path.with_extension("pub");
 
-        let private_key = fs::read_to_string(priv_key_path)?;
-        let pub_key = fs::read_to_string(&pub_key_path)?;
-        let fingerprint = Fingerprint::read(&pub_key_path)?;
-
+        let private_key = PrivateKey::new(fs::read_to_string(priv_key_path)?);
         let public_key = PublicKey {
-            public_key: pub_key,
-            fingerprint,
+            public_key: fs::read_to_string(&pub_key_path)?,
+            fingerprint: Fingerprint::read(&pub_key_path)?,
         };
 
         Ok(Self {

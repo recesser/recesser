@@ -4,8 +4,9 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 pub struct Settings {
     pub addr: String,
-    pub database_addr: String,
     pub objectstorage_addr: String,
+    pub database_addr: String,
+    pub secretstorage_addr: String,
     pub log_level: String,
 }
 
@@ -14,8 +15,9 @@ impl Settings {
         let mut settings = Config::new();
 
         settings.set_default("addr", "0.0.0.0:8080")?;
-        settings.set_default("database_addr", "redis://redis.redis/")?;
         settings.set_default("objectstorage_addr", "http://minio.minio:9000")?;
+        settings.set_default("database_addr", "redis://redis.redis/")?;
+        settings.set_default("secretstorage_addr", "http://vault.vault:8200")?;
         settings.set_default("log_level", "info")?;
 
         settings.merge(File::with_name("config.toml").required(false))?;
