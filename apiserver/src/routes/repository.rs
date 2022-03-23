@@ -3,7 +3,7 @@ use actix_web::{delete, get, put, web, Error, HttpRequest, HttpResponse};
 use recesser_core::repository::{KeyPair, NewRepository, Repository};
 use recesser_core::user::Scope;
 
-use crate::database;
+use crate::database::DocumentNotFoundError;
 use crate::error::UserError;
 use crate::routes::validate_scope;
 use crate::AppState;
@@ -68,7 +68,7 @@ async fn show(
         .repositories
         .show(&name)
         .await
-        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "repositories"))?;
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/repositories/{name}")))?;
 
     Ok(web::Json(repository))
 }
@@ -87,7 +87,7 @@ async fn credentials(
         .repositories
         .show(&name)
         .await
-        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "repositories"))?;
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/repositories/{name}")))?;
     let fingerprint = repository.public_key.fingerprint.to_string();
 
     let private_key = app_state
@@ -113,7 +113,7 @@ async fn remove(
         .repositories
         .remove(&name)
         .await
-        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "repositories"))?;
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/repositories/{name}")))?;
 
     Ok(HttpResponse::Ok().into())
 }

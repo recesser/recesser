@@ -77,10 +77,29 @@ impl Token {
         Ok(token)
     }
 
-    pub fn validate_scope(&self, scope: Scope) -> std::result::Result<(), UserError> {
-        if self.claims.scope != scope {
+    pub fn validate_scope(&self, expected_scope: Scope) -> std::result::Result<(), UserError> {
+        let authenticated = match expected_scope {
+            Scope::User => match self.claims.scope {
+                Scope::User => true,
+                Scope::Machine => true,
+                Scope::Admin => true,
+            },
+            Scope::Machine => match self.claims.scope {
+                Scope::User => false,
+                Scope::Machine => true,
+                Scope::Admin => true,
+            },
+            Scope::Admin => match self.claims.scope {
+                Scope::User => false,
+                Scope::Machine => false,
+                Scope::Admin => true,
+            },
+        };
+
+        if !authenticated {
             return Err(UserError::Unauthorized);
         }
+
         Ok(())
     }
 

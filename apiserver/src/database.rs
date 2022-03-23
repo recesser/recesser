@@ -2,7 +2,7 @@ mod metadata;
 mod repository;
 mod user;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use thiserror::Error;
 
 use crate::error::UserError;
@@ -31,22 +31,22 @@ impl Database {
 }
 
 #[derive(Debug, Error)]
-#[error("Handle {id} doesn't exist.")]
+#[error("{message}")]
 pub struct DocumentNotFoundError {
-    pub id: String,
+    pub message: String,
 }
 
 impl DocumentNotFoundError {
-    pub fn new(id: &str) -> Self {
+    pub fn new(message: &str) -> Self {
         Self {
-            id: String::from(id),
+            message: String::from(message),
         }
     }
 
-    pub fn downcast(e: Box<dyn std::error::Error>, path: &str) -> UserError {
+    pub fn downcast(e: Error, path: &str) -> UserError {
         match e.downcast::<Self>() {
-            Ok(e) => UserError::not_found(&format!("{path}/{}", e.id), e),
-            _ => UserError::Internal,
+            Ok(e) => UserError::not_found(path, e),
+            Err(_) => UserError::Internal,
         }
     }
 }

@@ -1,6 +1,6 @@
 use actix_web::{delete, web, Error, HttpResponse};
 
-use crate::database;
+use crate::database::DocumentNotFoundError;
 use crate::error::UserError;
 use crate::AppState;
 
@@ -16,7 +16,7 @@ async fn delete(
     let object_handle = metadata_store
         .retrieve(&handle)
         .await
-        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "artifacts"))?
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/artifacts/{handle}")))?
         .object_handle
         .to_string();
 

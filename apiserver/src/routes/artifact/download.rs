@@ -2,7 +2,7 @@ use actix_files::NamedFile;
 use actix_web::{get, web, Error};
 use recesser_core::metadata::Metadata;
 
-use crate::database;
+use crate::database::DocumentNotFoundError;
 use crate::error::UserError;
 use crate::AppState;
 
@@ -18,7 +18,7 @@ async fn download_file(
     let metadata = metadata_store
         .retrieve(&handle)
         .await
-        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "artifacts"))?;
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/artifacts/{handle}")))?;
 
     let file = tempfile::NamedTempFile::new()?;
     let filepath = file.path();
@@ -46,7 +46,7 @@ async fn download_metadata(
     let metadata = metadata_store
         .retrieve(&handle)
         .await
-        .map_err(|e| database::DocumentNotFoundError::downcast(e.into(), "artifacts"))?;
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/artifacts/{handle}")))?;
 
     Ok(web::Json(metadata))
 }

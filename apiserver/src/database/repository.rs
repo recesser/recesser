@@ -3,6 +3,8 @@ use futures_util::TryStreamExt;
 use mongodb::bson;
 use recesser_core::repository::Repository;
 
+use crate::database::DocumentNotFoundError;
+
 #[derive(Clone)]
 pub struct RepositoryStore {
     collection: mongodb::Collection<Repository>,
@@ -29,7 +31,10 @@ impl RepositoryStore {
             .collection
             .find_one(bson::doc! {"name": name}, None)
             .await?
-            .ok_or_else(|| anyhow::anyhow!("Repository doesn't exist: {name}"))?;
+            .ok_or_else(|| {
+                DocumentNotFoundError::new(&format!("Repository doesn't exist: {name}"))
+            })?;
+        log::debug!("{repository:#?}");
         Ok(repository)
     }
 

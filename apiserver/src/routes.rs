@@ -63,7 +63,6 @@ fn validate_token(
     app_state: &web::Data<AppState>,
 ) -> Result<Token, UserError> {
     let token_str = credentials.token();
-    log::debug!("{token_str}");
     let hmac_key = app_state.hmac_key.lock().unwrap();
     Token::validate(token_str, &hmac_key).map_err(UserError::unauthorized)
 }
