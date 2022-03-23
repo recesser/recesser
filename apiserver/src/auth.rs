@@ -56,8 +56,6 @@ struct Claims {
     scope: Scope,
 }
 
-#[derive(Deserialize, Serialize)]
-#[serde(transparent)]
 struct Mac([u8; DIGEST_LEN]);
 
 impl Token {
@@ -91,7 +89,7 @@ impl Token {
             "{}.{}.{}",
             self.header.to_base64()?,
             self.claims.to_base64()?,
-            self.mac.to_base64()?
+            self.mac.to_base64()
         ))
     }
 
@@ -163,6 +161,18 @@ impl Mac {
         hmac::verify(key.key(), payload, &self.0)?;
         Ok(())
     }
+
+    fn to_base64(&self) -> String {
+        let mut buf = String::with_capacity(46);
+        base64::encode_into_buf(&self.0, &mut buf);
+        buf
+    }
+
+    fn from_base64(input: &str) -> Result<Self> {
+        let mut buf = [0; DIGEST_LEN];
+        base64::decode_into_slice(input, &mut buf)?;
+        Ok(Self(buf))
+    }
 }
 
 trait ToBase64 {
@@ -186,5 +196,3 @@ trait ToBase64 {
 impl ToBase64 for Header {}
 
 impl ToBase64 for Claims {}
-
-impl ToBase64 for Mac {}

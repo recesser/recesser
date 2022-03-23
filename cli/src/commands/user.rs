@@ -10,7 +10,7 @@ impl UserCommands {
         match self {
             UserCommands::Create { scope } => create(global, scope)?,
             UserCommands::List => list(global)?,
-            UserCommands::Revoke { id } => revoke(global, &id)?,
+            UserCommands::RotateKey => rotate_key(global)?,
         }
         Ok(())
     }
@@ -30,8 +30,9 @@ fn list(g: Global) -> Result<()> {
     Ok(())
 }
 
-fn revoke(g: Global, id: &str) -> Result<()> {
-    g.http.revoke(id)?;
-    println!("Successfully revoked access for user: {id}");
+fn rotate_key(g: Global) -> Result<()> {
+    let new_root_token = g.http.rotate_key()?;
+    println!("Successfully rotated signing key and revoked access for all users");
+    println!("{new_root_token}");
     Ok(())
 }

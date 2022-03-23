@@ -64,5 +64,6 @@ fn validate_token(
 ) -> Result<Token, UserError> {
     let token_str = credentials.token();
     log::debug!("{token_str}");
-    Token::validate(token_str, &app_state.hmac_key).map_err(UserError::unauthorized)
+    let hmac_key = app_state.hmac_key.lock().unwrap();
+    Token::validate(token_str, &hmac_key).map_err(UserError::unauthorized)
 }

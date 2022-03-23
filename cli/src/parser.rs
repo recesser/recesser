@@ -79,6 +79,6 @@ pub enum UserCommands {
     Create { scope: Scope },
     /// List all users
     List,
-    /// Revoke acccess for a user
-    Revoke { id: String },
+    /// Rotate signing key and revoke acccess for all users
+    RotateKey,
 }

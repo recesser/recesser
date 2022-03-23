@@ -149,7 +149,7 @@ impl RepositoryEndpoints for Client {
 pub trait UserEndpoints {
     fn create(&self, scope: Scope) -> Result<String>;
     fn list(&self) -> Result<Vec<User>>;
-    fn revoke(&self, id: &str) -> Result<()>;
+    fn rotate_key(&self) -> Result<String>;
 }
 
 impl UserEndpoints for Client {
@@ -170,13 +170,10 @@ impl UserEndpoints for Client {
         Ok(users)
     }
 
-    fn revoke(&self, name: &str) -> Result<()> {
-        let resp = self
-            .client
-            .delete(self.url(&format!("{U}/{name}")))
-            .send()?;
-        check_body(resp)?;
-        Ok(())
+    fn rotate_key(&self) -> Result<String> {
+        let resp = self.client.delete(self.url(U)).send()?;
+        let body = check_body(resp)?;
+        Ok(String::from_utf8(body)?)
     }
 }
 

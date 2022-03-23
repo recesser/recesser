@@ -8,6 +8,8 @@ mod routes;
 mod secretstorage;
 mod settings;
 
+use std::sync::Mutex;
+
 use actix_web::{middleware, web, App, HttpServer};
 use anyhow::{anyhow, Result};
 use recesser_core::user::Scope;
@@ -15,6 +17,7 @@ use recesser_core::user::Scope;
 use auth::{HmacKey, Token};
 use database::Database;
 use objectstorage::ObjectStorage;
+use ring::rand::SystemRandom;
 use secretstorage::SecretStorage;
 use settings::Settings;
 
@@ -22,7 +25,8 @@ pub struct AppState {
     objstore: ObjectStorage,
     database: Database,
     secstore: SecretStorage,
-    hmac_key: HmacKey,
+    hmac_key: Mutex<HmacKey>,
+    rng: SystemRandom,
 }
 
 #[actix_web::main]
@@ -65,7 +69,8 @@ async fn main() -> Result<()> {
         objstore,
         database,
         secstore,
-        hmac_key,
+        hmac_key: Mutex::new(hmac_key),
+        rng,
     });
 
     HttpServer::new(move || {

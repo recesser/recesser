@@ -25,10 +25,8 @@ impl UserStore {
         Ok(users)
     }
 
-    pub async fn delete(&self, id: &str) -> Result<()> {
-        self.collection
-            .find_one_and_delete(bson::doc! {"id": id}, None)
-            .await?;
+    pub async fn delete(&self) -> Result<()> {
+        self.collection.delete_many(bson::doc! {}, None).await?;
         Ok(())
     }
 }
