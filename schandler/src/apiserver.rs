@@ -2,7 +2,6 @@ use anyhow::Result;
 use recesser_core::repository::Repository;
 use reqwest::{header, Client, Response};
 
-#[derive(Clone)]
 pub struct Apiserver {
     addr: String,
     client: Client,

@@ -48,14 +48,6 @@ impl Repository {
             last_commit: CommitID::new(None),
         }
     }
-
-    pub fn url(&self) -> &str {
-        &self.url
-    }
-
-    pub fn last_commit(&self) -> &CommitID {
-        &self.last_commit
-    }
 }
 
 impl PrivateKey {
@@ -83,5 +75,12 @@ impl fmt::Display for Fingerprint {
 impl CommitID {
     pub fn new(s: Option<String>) -> Self {
         Self(s)
+    }
+}
+
+impl fmt::Display for CommitID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = self.0.clone().unwrap_or_else(|| String::from("None"));
+        write!(f, "{}", s)
     }
 }

@@ -31,7 +31,7 @@ enum Language {
 
 impl Workflow {
     pub async fn from_repo(repo: &LocalRepository) -> Result<Self> {
-        let workflow_path = repo.path().join("recesser.yaml");
+        let workflow_path = repo.path.join("recesser.yaml");
         if !workflow_path.exists() {
             anyhow::bail!("Repository doesn't contain a workflow file (recesser.yaml).");
         }

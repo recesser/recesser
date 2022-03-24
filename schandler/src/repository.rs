@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::Result;
 use git2::build::RepoBuilder;
@@ -8,8 +8,8 @@ use tempfile::tempdir;
 
 #[derive(Debug)]
 pub struct LocalRepository {
-    path: PathBuf,
-    last_commit: CommitID,
+    pub path: PathBuf,
+    pub last_commit: CommitID,
 }
 
 impl LocalRepository {
@@ -36,13 +36,5 @@ impl LocalRepository {
             path: dirpath,
             last_commit,
         })
-    }
-
-    pub fn path(&self) -> &Path {
-        &self.path
-    }
-
-    pub fn last_commit(&self) -> &CommitID {
-        &self.last_commit
     }
 }
