@@ -18,27 +18,28 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 
 #[put("")]
 async fn add(
-    new_user: web::Json<NewRepository>,
+    new_repository: web::Json<NewRepository>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let new_repository = new_user.into_inner();
+    let new_repository = new_repository.into_inner();
 
     let fingerprint = new_repository.keypair.public_key.fingerprint.to_string();
     let KeyPair {
         private_key,
         public_key,
     } = new_repository.keypair;
-    app_state
-        .secstore
-        .store_ssh_key(&fingerprint, private_key)
-        .await
-        .map_err(UserError::internal)?;
 
     let repository = Repository::new(&new_repository.name, public_key);
     app_state
         .database
         .repositories
         .add(repository)
+        .await
+        .map_err(UserError::internal)?;
+
+    app_state
+        .secstore
+        .store_ssh_key(&fingerprint, &private_key)
         .await
         .map_err(UserError::internal)?;
 

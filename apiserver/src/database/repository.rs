@@ -16,7 +16,9 @@ impl RepositoryStore {
     }
 
     pub async fn add(&self, repository: Repository) -> Result<()> {
+        let name = repository.name.clone();
         self.collection.insert_one(repository, None).await?;
+        log::info!("Stored new repository in database: {}", &name);
         Ok(())
     }
 

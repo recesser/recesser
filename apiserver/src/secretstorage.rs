@@ -68,17 +68,20 @@ impl SecretStorage {
         Ok(())
     }
 
-    pub async fn get_ssh_key(&self, fingerprint: &str) -> Result<Vec<u8>> {
-        let key = self.get(&format!("ssh_keys/{fingerprint}")).await?;
-        Ok(key)
+    pub async fn get_ssh_key(&self, fingerprint: &str) -> Result<String> {
+        let base64_fingerprint = base64::encode(fingerprint.as_bytes());
+        let key = self.get(&format!("ssh_keys/{base64_fingerprint}")).await?;
+        Ok(String::from_utf8(key)?)
     }
 
-    pub async fn store_ssh_key(&self, fingerprint: &str, private_key: PrivateKey) -> Result<()> {
+    pub async fn store_ssh_key(&self, fingerprint: &str, private_key: &PrivateKey) -> Result<()> {
+        let base64_fingerprint = base64::encode(fingerprint.as_bytes());
         self.set(
-            &format!("ssh_keys/{fingerprint}"),
+            &format!("ssh_keys/{base64_fingerprint}"),
             private_key.as_str().as_bytes(),
         )
         .await?;
+        log::info!("Stored new SSH key in secret storage: {fingerprint}");
         Ok(())
     }
 
