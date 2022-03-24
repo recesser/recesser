@@ -3,6 +3,7 @@
 mod apiserver;
 mod argo_workflow;
 mod repository;
+mod settings;
 mod workflow;
 
 use std::str::FromStr;
@@ -17,6 +18,7 @@ use tracing_subscriber::filter::LevelFilter;
 use apiserver::Apiserver;
 use argo_workflow::ArgoWorkflow;
 use repository::LocalRepository;
+use settings::Settings;
 use workflow::Workflow;
 
 struct Global {
@@ -25,26 +27,22 @@ struct Global {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize settings
+    let s = Settings::new()?;
+
     // Setup logging
-    let log_level_str = match std::env::var("RECESSER_LOG_LEVEL") {
-        Ok(log_level) => log_level,
-        Err(_) => String::from("INFO"),
-    };
-    let log_level = LevelFilter::from_str(&log_level_str)?;
+    let log_level = LevelFilter::from_str(&s.log_level)?;
     tracing_subscriber::fmt().with_max_level(log_level).init();
 
     // Initialize global state
-    let apiserver_addr = std::env::var("RECESSER_APISERVER_ADDR")?;
     let apiserver_token = std::env::var("RECESSER_APISERVER_TOKEN")
         .map_err(|_| anyhow!("Apiserver token needs to be specified via environment"))?;
     let global = Arc::new(Global {
-        apiserver: Apiserver::new(&apiserver_addr, &apiserver_token)?,
+        apiserver: Apiserver::new(&s.apiserver_addr, &apiserver_token)?,
     });
 
     // Poll all repositories on an interval
-    let interval_str = std::env::var("RECESSER_POLLING_INTERVAL")?;
-    let interval_secs = interval_str.parse::<u64>()? * 60;
-    let mut interval = tokio::time::interval(Duration::from_secs(interval_secs));
+    let mut interval = tokio::time::interval(Duration::from_secs(s.polling_interval * 60));
     loop {
         interval.tick().await;
         poll_all_repositories(global.clone()).await?;
