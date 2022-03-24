@@ -1,26 +1,37 @@
 use std::convert::TryFrom;
 
 use anyhow::{Error, Result};
+use reqwest::Client;
 use serde::Serialize;
-use std::env;
 
 use crate::workflow::Workflow;
 
-#[derive(Serialize, Debug)]
-pub struct ArgoWorkflow {}
+#[derive(Clone)]
+pub struct ArgoWorkflowServer {
+    addr: String,
+    client: Client,
+}
 
-impl ArgoWorkflow {
-    pub async fn enqueue(&self, argo_addr: &str) -> Result<()> {
-        let client = reqwest::Client::new();
-        client
-            .post(format!("http://{argo_addr}/api/v1/workflows/argo/submit"))
-            .bearer_auth(env::var("BEARER_TOKEN")?)
-            .json(self)
+impl ArgoWorkflowServer {
+    pub fn new(addr: &str) -> Self {
+        Self {
+            addr: String::from(addr),
+            client: reqwest::Client::new(),
+        }
+    }
+
+    pub async fn submit(&self, argo_workflow: ArgoWorkflow) -> Result<()> {
+        self.client
+            .post(format!("http://{}/api/v1/workflows/argo/submit", self.addr))
+            .json(&argo_workflow)
             .send()
             .await?;
         Ok(())
     }
 }
+
+#[derive(Serialize, Debug)]
+pub struct ArgoWorkflow {}
 
 impl TryFrom<Workflow> for ArgoWorkflow {
     type Error = Error;

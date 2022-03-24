@@ -1813,6 +1813,7 @@ dependencies = [
  "recesser-core",
  "reqwest",
  "serde 1.0.136",
+ "serde_json",
  "serde_yaml",
  "tempfile",
  "tokio",

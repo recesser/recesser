@@ -13,13 +13,13 @@ pub struct LocalRepository {
 }
 
 impl LocalRepository {
-    pub fn from_remote(url: &str, private_key_path: &Path) -> Result<Self> {
+    pub fn from_remote(url: &str, private_key: &str) -> Result<Self> {
         let dir = tempdir()?;
         let dirpath = dir.into_path();
 
         let mut callbacks = RemoteCallbacks::new();
-        callbacks.credentials(|_url, username_from_url, _allowed_types| {
-            Cred::ssh_key(username_from_url.unwrap(), None, private_key_path, None)
+        callbacks.credentials(|_, username, _| {
+            Cred::ssh_key_from_memory(username.unwrap(), None, private_key, None)
         });
 
         let mut fetch_options = FetchOptions::new();
