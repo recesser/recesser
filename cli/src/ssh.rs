@@ -37,7 +37,7 @@ fn keygen_command(workdir: &Path, filename: &str) -> Result<()> {
         .current_dir(convert_to_str(workdir)?)
         .args(["-f", filename])
         .args(["-t", "ed25519"])
-        .args(["-N", "''"])
+        .args(["-N", ""])
         .args(["-C", "RecesserMachineKey"])
         .output()?;
     if !output.status.success() {
