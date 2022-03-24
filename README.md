@@ -1,42 +1,31 @@
-# Recesser - Reproducible Computational Social Science Research
+# Recesser
 
-## Apiserver
+**Reproducible Computational Social Science Research**
 
-### Artifacts
+## Usage
 
-| Method | URL                          | Description                |
-| ------ | ---------------------------- | -------------------------- |
-| PUT    | /artifacts                   | Upload artifact            |
-| GET    | /artifacts                   | List all artifacts         |
-| GET    | /artifacts/{handle}/file     | Download artifact file     |
-| GET    | /artifacts/{handle}/metadata | Download artifact metadata |
-| DELETE | /artifacts/{handle}          | Delete artifact            |
+The primary mode of interaction with the system is through the CLI.
 
-### Repositories
+### CLI
 
-| Method | URL                             | Description                     |
-| ------ | ------------------------------- | ------------------------------- |
-| PUT    | /repositories                   | Register repository             |
-| GET    | /repositories                   | List all repositories           |
-| GET    | /repositories/{id}              | Show repository                 |
-| GET    | /repositories/{id}/credentials  | Retrieve repository credentials |
-| DELETE | /repositories/{id}              | Deregister repository           |
+## Installation
 
-### Users
+Recesser is installed on a single Kubernetes cluster. The installation manifests can be found in the
+[Recesser Infrastructure](https://github.com/recesser/infrastructure) repository.
 
-| Method | URL                          | Description                |
-| ------ | ---------------------------- | -------------------------- |
-| PUT    | /users                       | Create new user            |
-| GET    | /users                       | List all users             |
-| DELETE | /users/{id}                  | Delete user                |
+## Development
 
-## Command Line Interface
+Start backend services with Docker Compose:
 
-### Repository
+```bash
+docker compose up --detach
+```
 
-| Command  | Description                        |
-| -------- | ---------------------------------- |
-| upload   | Upload artifact                    |
-| list     | List all artifacts                 |
-| download | Download artifact (incl. metadata) |
-| delete   | Delete artifact                    |
+Source environment variables for local development:
+
+```bash
+set -a # Necessary to export all created variables when sourcing a file
+source apiserver.local.env
+source cli.local.env
+source schandler.local.env
+```
