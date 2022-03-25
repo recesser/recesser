@@ -4,18 +4,19 @@ use std::path::Path;
 use anyhow::{anyhow, Result};
 pub use recesser_core::repository::{Fingerprint, KeyPair, PrivateKey, PublicKey};
 
+const FILENAME: &str = "recesser-machine-key";
+
 pub trait KeyGen {
-    fn generate(name: &str) -> Result<KeyPair>;
+    fn generate() -> Result<KeyPair>;
 }
 
 impl KeyGen for KeyPair {
-    fn generate(name: &str) -> Result<Self> {
+    fn generate() -> Result<Self> {
         let dir = tempfile::tempdir()?;
-        let filename = name.replace('/', "-");
 
-        keygen_command(dir.path(), &filename)?;
+        keygen_command(dir.path(), FILENAME)?;
 
-        let priv_key_path = dir.path().join(filename);
+        let priv_key_path = dir.path().join(FILENAME);
         let pub_key_path = priv_key_path.with_extension("pub");
 
         let private_key = PrivateKey::new(fs::read_to_string(priv_key_path)?);
@@ -49,7 +50,7 @@ fn keygen_command(workdir: &Path, filename: &str) -> Result<()> {
     Ok(())
 }
 
-pub trait ReadFingerprint {
+trait ReadFingerprint {
     fn read(filepath: &Path) -> Result<Fingerprint>;
 }
 

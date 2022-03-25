@@ -19,7 +19,7 @@ impl RepositoryCommands {
 }
 
 fn add(g: Global, name: &str) -> Result<()> {
-    let keypair = ssh::KeyPair::generate(name)?;
+    let keypair = ssh::KeyPair::generate()?;
     let pub_key = keypair.public_key.public_key.clone();
     let new_repository = NewRepository {
         name: String::from(name),
