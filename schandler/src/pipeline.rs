@@ -8,7 +8,7 @@ use tokio::fs;
 use crate::repository::LocalRepository;
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct Workflow {
+pub struct Pipeline {
     name: String,
     artifact: String,
     template: Option<Template>,
@@ -29,11 +29,11 @@ enum Language {
     R,
 }
 
-impl Workflow {
+impl Pipeline {
     pub async fn from_repo(repo: &LocalRepository) -> Result<Self> {
         let workflow_path = repo.path.join("recesser.yaml");
         if !workflow_path.exists() {
-            anyhow::bail!("Repository doesn't contain a workflow file (recesser.yaml).");
+            anyhow::bail!("Repository doesn't contain a pipeline definition (recesser.yaml).");
         }
         let buf = fs::read_to_string(&workflow_path).await?;
         Ok(serde_yaml::from_str(&buf)?)

@@ -1,10 +1,10 @@
 #![forbid(unsafe_code)]
 
 mod apiserver;
-mod argo_workflow;
+mod argo_workflows;
+mod pipeline;
 mod repository;
 mod settings;
-mod workflow;
 
 use std::str::FromStr;
 use std::sync::Arc;
@@ -16,13 +16,14 @@ use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
 
 use apiserver::Apiserver;
-use argo_workflow::ArgoWorkflow;
+use argo_workflows::ArgoWorkflowsServer;
+use pipeline::Pipeline;
 use repository::LocalRepository;
 use settings::Settings;
-use workflow::Workflow;
 
 struct Global {
     apiserver: Apiserver,
+    argo_workflows: ArgoWorkflowsServer,
 }
 
 #[tokio::main]
@@ -39,6 +40,7 @@ async fn main() -> Result<()> {
         .map_err(|_| anyhow!("Apiserver token needs to be specified via environment"))?;
     let global = Arc::new(Global {
         apiserver: Apiserver::new(&s.apiserver_addr, &apiserver_token)?,
+        argo_workflows: ArgoWorkflowsServer::new(&s.argo_workflows_addr),
     });
 
     // Poll all repositories on an interval
@@ -96,8 +98,7 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
         new_commit_id = %local_repository.last_commit
     );
 
-    let workflow = Workflow::from_repo(&local_repository).await?;
-    let _argo_workflow = ArgoWorkflow::try_from(workflow)?;
+    let _workflow = Pipeline::from_repo(&local_repository).await?;
 
     tracing::event!(
         Level::INFO,
