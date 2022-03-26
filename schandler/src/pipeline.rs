@@ -1,32 +1,47 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use serde_yaml::Value;
 use tokio::fs;
 
 use crate::repository::LocalRepository;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Pipeline {
+    api_version: String,
+    metadata: Metadata,
+    #[serde(flatten)]
+    kind: Kind,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct Metadata {
     name: String,
-    artifact: String,
-    template: Option<Template>,
-    custom_workflow: Option<Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(tag = "kind", content = "spec")]
+enum Kind {
+    TemplatePipeline {
+        inputs: Vec<String>,
+        template: Template,
+        dependencies: Vec<String>,
+        command: Vec<String>,
+        args: Vec<String>,
+        working_dir: String,
+    },
+    CustomPipeline {
+        inputs: Vec<String>,
+        image: String,
+        build: Option<String>,
+        command: Vec<String>,
+        args: Vec<String>,
+        working_dir: String,
+    },
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Template {
-    language: Language,
-    image: Option<String>,
-    entrypoint: PathBuf,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(untagged)]
-enum Language {
-    Python,
-    R,
+    name: String,
+    version: String,
 }
 
 impl Pipeline {

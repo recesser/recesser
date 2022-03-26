@@ -84,6 +84,16 @@ mod workflow {
         spec: WorkflowSpec,
     }
 
+    impl Workflow {
+        fn new(spec: WorkflowSpec) -> Self {
+            Self {
+                api_version: "argoproj.io/v1alpha1".into(),
+                kind: "Workflow".into(),
+                spec,
+            }
+        }
+    }
+
     #[derive(Serialize, Debug)]
     struct WorkflowSpec {
         entrypoint: String,
