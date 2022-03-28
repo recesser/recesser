@@ -81,7 +81,7 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
     );
 
     let local_repository = LocalRepository::from_remote(&repository.url, &private_key)?;
-    tracing::event!(Level::INFO, message = "Cloned repository from remote",);
+    tracing::event!(Level::INFO, message = "Cloned repository from remote");
 
     if repository.last_commit == local_repository.last_commit {
         tracing::event!(

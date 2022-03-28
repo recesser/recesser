@@ -5,43 +5,52 @@ use tokio::fs;
 use crate::repository::LocalRepository;
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Pipeline {
-    api_version: String,
-    metadata: Metadata,
+    pub api_version: String,
+    pub metadata: Metadata,
     #[serde(flatten)]
-    kind: Kind,
+    pub kind: Kind,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct Metadata {
-    name: String,
+pub struct Metadata {
+    pub name: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(tag = "kind", content = "spec")]
-enum Kind {
-    TemplatePipeline {
-        inputs: Vec<String>,
-        template: Template,
-        dependencies: Vec<String>,
-        command: Vec<String>,
-        args: Vec<String>,
-        working_dir: String,
-    },
-    CustomPipeline {
-        inputs: Vec<String>,
-        image: String,
-        build: Option<String>,
-        command: Vec<String>,
-        args: Vec<String>,
-        working_dir: String,
-    },
+pub enum Kind {
+    TemplatePipeline(TemplatePipeline),
+    CustomPipeline(CustomPipeline),
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct Template {
-    name: String,
-    version: String,
+#[serde(rename_all = "camelCase")]
+pub struct TemplatePipeline {
+    pub inputs: Option<Vec<String>>,
+    pub template: Template,
+    pub dependencies: Option<String>,
+    pub entrypoint: Vec<String>,
+    pub args: Option<Vec<String>>,
+    pub working_dir: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Template {
+    pub name: String,
+    pub version: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomPipeline {
+    pub inputs: Vec<String>,
+    pub image: Option<String>,
+    pub build: Option<String>,
+    pub entrypoint: Vec<String>,
+    pub args: Option<Vec<String>>,
+    pub working_dir: Option<String>,
 }
 
 impl Pipeline {
@@ -52,5 +61,51 @@ impl Pipeline {
         }
         let buf = fs::read_to_string(&workflow_path).await?;
         Ok(serde_yaml::from_str(&buf)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEMPLATE_PIPELINE: &str = r#"
+        apiVersion: v1
+        kind: TemplatePipeline
+        metadata:
+          name: twitter-2016
+        spec:
+          inputs:
+            - AQExRKu0RUToW4g-jgmhVDuvDzpRpHgkjIsB6ZXpu_JwBA
+            - AQEUo_pBYYItKCM2TI29WFfh-wi7kkyKGcbS-xDlUexpZw
+          template:
+            name: Python
+            version: 1.0.0
+          dependencies: requirements.txt
+          entrypoint: [ main.py ]
+    "#;
+
+    const CUSTOM_PIPELINE: &str = r#"
+        apiVersion: v1
+        kind: CustomPipeline
+        metadata:
+          name: twitter-2016
+        spec:
+          inputs:
+            - AQExRKu0RUToW4g-jgmhVDuvDzpRpHgkjIsB6ZXpu_JwBA
+            - AQEUo_pBYYItKCM2TI29WFfh-wi7kkyKGcbS-xDlUexpZw
+          build: ./Dockerfile
+          entrypoint: [ main.py ]
+    "#;
+
+    #[test]
+    fn can_parse_template_pipeline_yaml() -> Result<()> {
+        serde_yaml::from_str::<Pipeline>(TEMPLATE_PIPELINE)?;
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_custom_pipeline_yaml() -> Result<()> {
+        serde_yaml::from_str::<Pipeline>(CUSTOM_PIPELINE)?;
+        Ok(())
     }
 }

@@ -74,7 +74,13 @@ mod ssh_secret {
 }
 
 mod workflow {
+    use anyhow::Result;
+    use recesser_core::repository::Repository;
     use serde::Serialize;
+
+    use crate::pipeline::{Kind, Pipeline};
+
+    const CLI_IMAGE: &str = "recesser/cli:0.1.0";
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
@@ -85,6 +91,89 @@ mod workflow {
     }
 
     impl Workflow {
+        pub fn from_pipeline(
+            pipeline: Pipeline,
+            repository: Repository,
+            ssh_private_key_secret_name: String,
+        ) -> Result<Self> {
+            let pipeline = match pipeline.kind {
+                Kind::TemplatePipeline(template_pipeline) => template_pipeline,
+                _ => return Err(anyhow::anyhow!("CustomTemplate is not yet implemented")),
+            };
+
+            let mut templates = Vec::new();
+            let mut workflow_steps = Vec::new();
+
+            if let Some(inputs) = pipeline.inputs {
+                let download_artifacts_container = Container {
+                    image: CLI_IMAGE.into(),
+                    command: vec![format!("rcssr download {}", inputs.join(""))],
+                    args: None,
+                    working_dir: None,
+                };
+                let download_artifacts_template = Template {
+                    name: "download_artifacts".into(),
+                    inputs: None,
+                    container: Some(download_artifacts_container),
+                    steps: None,
+                };
+                templates.push(download_artifacts_template);
+
+                let download_artifacts_step = WorkflowStep {
+                    name: "A".into(),
+                    template: "download_artifacts".into(),
+                };
+                workflow_steps.push(vec![download_artifacts_step]);
+            }
+
+            let git_artifact = GitArtifact {
+                repo: repository.url,
+                revision: repository.last_commit.to_string(),
+                ssh_private_key_secret: SSHPrivateKeySecret::new(ssh_private_key_secret_name),
+                depth: 0,
+            };
+            let inputs = Inputs {
+                artifacts: vec![Artifact {
+                    name: "source-code".into(),
+                    path: None,
+                    git: Some(git_artifact),
+                }],
+            };
+            let main_container = Container {
+                image: format!("{}:{}", pipeline.template.name, pipeline.template.version),
+                command: pipeline.entrypoint,
+                args: None,
+                working_dir: None,
+            };
+            let main_template = Template {
+                name: "main".into(),
+                inputs: Some(inputs),
+                container: Some(main_container),
+                steps: None,
+            };
+            templates.push(main_template);
+
+            let main_steps = WorkflowStep {
+                name: "B".into(),
+                template: "main".into(),
+            };
+            workflow_steps.push(vec![main_steps]);
+
+            let steps_template = Template {
+                name: "steps".into(),
+                inputs: None,
+                container: None,
+                steps: Some(workflow_steps),
+            };
+            templates.push(steps_template);
+
+            let spec = WorkflowSpec {
+                entrypoint: "steps".into(),
+                templates,
+            };
+            Ok(Self::new(spec))
+        }
+
         fn new(spec: WorkflowSpec) -> Self {
             Self {
                 api_version: "argoproj.io/v1alpha1".into(),
@@ -105,7 +194,7 @@ mod workflow {
         name: String,
         inputs: Option<Inputs>,
         container: Option<Container>,
-        dag: Option<DagTemplate>,
+        steps: Option<Vec<Vec<WorkflowStep>>>,
     }
 
     #[derive(Serialize, Debug)]
@@ -116,9 +205,8 @@ mod workflow {
     #[derive(Serialize, Debug)]
     struct Artifact {
         name: String,
-        path: String,
+        path: Option<String>,
         git: Option<GitArtifact>,
-        http: Option<HTTPArtifact>,
     }
 
     #[derive(Serialize, Debug)]
@@ -136,36 +224,27 @@ mod workflow {
         key: String,
     }
 
-    #[derive(Serialize, Debug)]
-    struct HTTPArtifact {
-        headers: Vec<Header>,
-        url: String,
-    }
-
-    #[derive(Serialize, Debug)]
-    struct Header {
-        name: String,
-        value: String,
+    impl SSHPrivateKeySecret {
+        pub fn new(name: String) -> Self {
+            Self {
+                name,
+                key: "ssh-private-key".into(),
+            }
+        }
     }
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     struct Container {
         image: String,
-        command: String,
-        args: Vec<String>,
-        working_dir: String,
+        command: Vec<String>,
+        args: Option<Vec<String>>,
+        working_dir: Option<String>,
     }
 
     #[derive(Serialize, Debug)]
-    struct DagTemplate {
-        tasks: Vec<DagTask>,
-    }
-
-    #[derive(Serialize, Debug)]
-    struct DagTask {
+    struct WorkflowStep {
         name: String,
-        dependencies: Vec<String>,
         template: String,
     }
 }
