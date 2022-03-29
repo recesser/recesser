@@ -16,7 +16,7 @@ use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
 
 use apiserver::Apiserver;
-use argo_workflows::ArgoWorkflowsServer;
+use argo_workflows::{ArgoWorkflowsServer, SSHSecret, Workflow};
 use pipeline::Pipeline;
 use repository::LocalRepository;
 use settings::Settings;
@@ -98,12 +98,13 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
         new_commit_id = %local_repository.last_commit
     );
 
-    let _workflow = Pipeline::from_repo(&local_repository).await?;
+    let ssh_secret_name = repository.public_key.fingerprint.to_string();
+    let _ssh_secret = SSHSecret::new(ssh_secret_name.clone(), private_key);
 
-    tracing::event!(
-        Level::INFO,
-        message = "Successfully polled repository",
-        name = %repository.name
-    );
+    let pipeline = Pipeline::from_repo(&local_repository).await?;
+    let workflow = Workflow::from_pipeline(pipeline, repository, ssh_secret_name)?;
+    g.argo_workflows.submit(workflow).await?;
+
+    tracing::event!(Level::INFO, message = "Successfully polled repository");
     Ok(())
 }

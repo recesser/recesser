@@ -94,7 +94,7 @@ mod workflow {
         pub fn from_pipeline(
             pipeline: Pipeline,
             repository: Repository,
-            ssh_private_key_secret_name: String,
+            ssh_secret_name: String,
         ) -> Result<Self> {
             let pipeline = match pipeline.kind {
                 Kind::TemplatePipeline(template_pipeline) => template_pipeline,
@@ -120,7 +120,7 @@ mod workflow {
                 templates.push(download_artifacts_template);
 
                 let download_artifacts_step = WorkflowStep {
-                    name: "A".into(),
+                    name: "Download Artifacts Step".into(),
                     template: "download_artifacts".into(),
                 };
                 workflow_steps.push(vec![download_artifacts_step]);
@@ -129,10 +129,10 @@ mod workflow {
             let git_artifact = GitArtifact {
                 repo: repository.url,
                 revision: repository.last_commit.to_string(),
-                ssh_private_key_secret: SSHPrivateKeySecret::new(ssh_private_key_secret_name),
+                ssh_private_key_secret: SSHPrivateKeySecret::new(ssh_secret_name),
                 depth: 0,
             };
-            let inputs = Inputs {
+            let main_template_inputs = Inputs {
                 artifacts: vec![Artifact {
                     name: "source-code".into(),
                     path: None,
@@ -147,17 +147,17 @@ mod workflow {
             };
             let main_template = Template {
                 name: "main".into(),
-                inputs: Some(inputs),
+                inputs: Some(main_template_inputs),
                 container: Some(main_container),
                 steps: None,
             };
             templates.push(main_template);
 
-            let main_steps = WorkflowStep {
-                name: "B".into(),
+            let main_step = WorkflowStep {
+                name: "Main Step".into(),
                 template: "main".into(),
             };
-            workflow_steps.push(vec![main_steps]);
+            workflow_steps.push(vec![main_step]);
 
             let steps_template = Template {
                 name: "steps".into(),
