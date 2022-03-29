@@ -2,6 +2,7 @@ use std::convert::TryInto;
 
 use anyhow::Result;
 use recesser_core::encoding::base64;
+use recesser_core::encryption::KEY_LEN;
 use reqwest::Client;
 use reqwest::{header, Response};
 use ring::digest::SHA256_OUTPUT_LEN;
@@ -92,6 +93,16 @@ impl SecretStorage {
 
     pub async fn store_hmac_key(&self, hmac_key: &[u8; SHA256_OUTPUT_LEN]) -> Result<()> {
         self.set("hmac_key", hmac_key).await
+    }
+
+    pub async fn get_encryption_key(&self, handle: &str) -> Result<[u8; KEY_LEN]> {
+        let key = self.get(&format!("encryption_key/{handle}")).await?;
+        Ok(key[..KEY_LEN].try_into()?)
+    }
+
+    pub async fn store_encryption_key(&self, handle: &str, key: &[u8; KEY_LEN]) -> Result<()> {
+        self.set(&format!("encryption_key/{handle}"), key).await?;
+        Ok(())
     }
 
     async fn get(&self, key: &str) -> Result<Vec<u8>> {

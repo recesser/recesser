@@ -1968,6 +1968,7 @@ dependencies = [
  "anyhow",
  "base64",
  "blake3",
+ "ring",
  "serde 1.0.136",
  "serde_json",
  "serde_with",
