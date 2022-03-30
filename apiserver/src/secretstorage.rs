@@ -2,13 +2,13 @@ use std::convert::TryInto;
 
 use anyhow::Result;
 use recesser_core::encoding::base64;
+use recesser_core::repository::PrivateKey;
 use reqwest::Client;
 use reqwest::{header, Response};
 use ring::digest::SHA256_OUTPUT_LEN;
 use serde::{Deserialize, Serialize};
 
 use crate::encryption::KEY_LEN;
-use recesser_core::repository::PrivateKey;
 
 #[derive(Clone)]
 pub struct SecretStorage {
