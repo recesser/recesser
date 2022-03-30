@@ -26,11 +26,11 @@ impl SecretBox {
         Ok(())
     }
 
-    fn decrypt(&mut self, key_bytes: &[u8; KEY_LEN]) -> Result<()> {
+    fn decrypt(&mut self, key_bytes: &[u8; KEY_LEN]) -> Result<&[u8]> {
         let key = construct_key(key_bytes)?;
         let nonce = Nonce::assume_unique_for_key(self.nonce);
-        key.open_in_place(nonce, Aad::empty(), &mut self.content)?;
-        Ok(())
+        let plaintext = key.open_in_place(nonce, Aad::empty(), &mut self.content)?;
+        Ok(plaintext)
     }
 
     fn from_slice(input: &[u8]) -> Result<Self> {
@@ -40,7 +40,7 @@ impl SecretBox {
         })
     }
 
-    fn into_vec(self) -> Vec<u8> {
+    fn into_token(self) -> Vec<u8> {
         let mut buf = Vec::new();
         buf.extend_from_slice(&self.nonce);
         let mut content = self.content;
@@ -77,7 +77,7 @@ pub fn encrypt_file(
     secret_box.encrypt(key_bytes)?;
 
     let mut file = std::fs::File::create(&file_path)?;
-    file.write_all(&secret_box.into_vec())?;
+    file.write_all(&secret_box.into_token())?;
 
     Ok(())
 }
@@ -88,10 +88,10 @@ pub fn decrypt_file(file_path: &Path, key_bytes: &[u8; KEY_LEN]) -> Result<()> {
     file.read_to_end(&mut file_content)?;
 
     let mut secret_box = SecretBox::from_slice(&file_content)?;
-    secret_box.decrypt(key_bytes)?;
+    let plaintext = secret_box.decrypt(key_bytes)?;
 
     let mut file = std::fs::File::create(&file_path)?;
-    file.write_all(&secret_box.into_vec())?;
+    file.write_all(plaintext)?;
 
     Ok(())
 }

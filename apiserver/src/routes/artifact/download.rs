@@ -1,8 +1,12 @@
+use std::path::PathBuf;
+
 use actix_files::NamedFile;
 use actix_web::{get, web, Error};
+use anyhow::Result;
 use recesser_core::metadata::Metadata;
 
 use crate::database::DocumentNotFoundError;
+use crate::encryption::decrypt_file;
 use crate::error::UserError;
 use crate::AppState;
 
@@ -21,17 +25,31 @@ async fn download_file(
         .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/artifacts/{handle}")))?;
 
     let file = tempfile::NamedTempFile::new()?;
-    let filepath = file.path();
+    let file_path = file.into_temp_path();
 
-    let path = app_state
+    let object_handle_string = metadata.object_handle.to_string();
+
+    app_state
         .objstore
-        .download_file(&metadata.object_handle.to_string(), filepath)
+        .download_file(&object_handle_string, &file_path)
         .await
         .map_err(UserError::internal)?;
 
-    log::debug!("Path of downloaded file: {path:?}");
+    get_key_and_decrypt_file(&app_state, &object_handle_string, file_path.to_path_buf())
+        .await
+        .map_err(UserError::internal)?;
 
-    Ok(NamedFile::open_async(&filepath).await?)
+    Ok(NamedFile::open_async(&file_path).await?)
+}
+
+async fn get_key_and_decrypt_file(
+    app_state: &web::Data<AppState>,
+    object_handle: &str,
+    file_path: PathBuf,
+) -> Result<()> {
+    let key_bytes = app_state.secstore.get_encryption_key(object_handle).await?;
+    web::block(move || decrypt_file(&file_path, &key_bytes)).await??;
+    Ok(())
 }
 
 #[get("/{handle}/metadata")]

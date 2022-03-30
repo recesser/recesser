@@ -2,6 +2,7 @@
 
 mod auth;
 mod database;
+mod encryption;
 mod error;
 mod objectstorage;
 mod routes;

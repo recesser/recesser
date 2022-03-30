@@ -14,4 +14,3 @@ serde_json = "1.0"
 serde_with = "1.11"
 strum = "0.24"
 strum_macros = "0.24"
-ring = { version = "0.16", default-features = false, features = ["std", "dev_urandom_fallback"] }

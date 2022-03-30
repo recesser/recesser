@@ -10,6 +10,7 @@ use recesser_core::metadata::Metadata;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
+use crate::encryption::{encrypt_file, generate_random_key};
 use crate::error::UserError;
 use crate::AppState;
 
@@ -58,7 +59,7 @@ async fn upload(
                     log::debug!("File already exist in object storage. Skipping upload.");
                 } else {
                     log::debug!("File doesn't exist in object storage. Uploading it.");
-                    extract_and_upload_file(&mut field, metadata, &app_state).await?
+                    extract_encrypt_and_upload_file(&mut field, metadata, &app_state).await?
                 }
 
                 metadata_store
@@ -83,7 +84,7 @@ async fn extract_metadata(field: &mut Field) -> Result<Option<Metadata>> {
     Ok(Some(serde_json::from_slice(&buf)?))
 }
 
-async fn extract_and_upload_file(
+async fn extract_encrypt_and_upload_file(
     field: &mut Field,
     metadata: &Metadata,
     app_state: &web::Data<AppState>,
@@ -98,13 +99,20 @@ async fn extract_and_upload_file(
         .verify(&metadata.object_handle)
         .map_err(UserError::integrity)?;
 
+    encrypt_file_and_store_key(
+        app_state,
+        file_path.to_path_buf(),
+        &metadata.object_handle.to_string(),
+    )
+    .await
+    .map_err(UserError::internal)?;
+
     app_state
         .objstore
         .upload_file(computed_object_handle.to_string(), &file_path)
         .await
         .map_err(UserError::internal)?;
 
-    file_path.close().map_err(UserError::internal)?;
     Ok(())
 }
 
@@ -115,4 +123,21 @@ async fn extract_file(field: &mut Field, file_path: PathBuf) -> Result<Handle> {
     }
     let handle = web::block(move || Handle::compute_from_file(&file_path)).await??;
     Ok(handle)
+}
+
+async fn encrypt_file_and_store_key(
+    app_state: &web::Data<AppState>,
+    file_path: PathBuf,
+    object_handle: &str,
+) -> Result<()> {
+    let key = generate_random_key(&app_state.rng)?;
+
+    let rng = app_state.rng.clone();
+    web::block(move || encrypt_file(&rng, &file_path, &key)).await??;
+
+    app_state
+        .secstore
+        .store_encryption_key(object_handle, &key)
+        .await?;
+    Ok(())
 }
