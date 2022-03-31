@@ -3,9 +3,9 @@ use actix_web::{delete, get, put, web, Error, HttpRequest, HttpResponse};
 use recesser_core::repository::{KeyPair, NewRepository, Repository};
 use recesser_core::user::Scope;
 
+use crate::auth::middleware::validate_scope;
 use crate::database::DocumentNotFoundError;
 use crate::error::UserError;
-use crate::routes::validate_scope;
 use crate::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -80,7 +80,7 @@ async fn credentials(
     path: web::Path<(String, String)>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    validate_scope(req, Scope::Machine)?;
+    validate_scope(&req, Scope::Machine)?;
     let name = extract_name(path);
 
     let repository = app_state

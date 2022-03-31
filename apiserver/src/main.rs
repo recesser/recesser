@@ -12,9 +12,11 @@ mod settings;
 use std::sync::Mutex;
 
 use actix_web::{middleware, web, App, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::{anyhow, Result};
 use recesser_core::user::Scope;
 
+use auth::middleware::validator;
 use auth::{HmacKey, Token};
 use database::Database;
 use objectstorage::ObjectStorage;
@@ -77,8 +79,9 @@ async fn main() -> Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
-            .wrap(middleware::Logger::default())
             .configure(routes::config)
+            .wrap(middleware::Logger::default())
+            .wrap(HttpAuthentication::bearer(validator))
     })
     .bind(&s.addr)?
     .run()

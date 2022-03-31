@@ -215,3 +215,45 @@ trait ToBase64 {
 impl ToBase64 for Header {}
 
 impl ToBase64 for Claims {}
+
+pub mod middleware {
+    use actix_web::dev::ServiceRequest;
+    use actix_web::Error;
+    use actix_web::{web, HttpMessage};
+    use actix_web_httpauth::extractors::bearer::BearerAuth;
+
+    use crate::error::UserError;
+    use crate::AppState;
+
+    use super::{Scope, Token};
+
+    pub fn validate_scope(req: &impl HttpMessage, scope: Scope) -> Result<(), UserError> {
+        let ext = req.extensions();
+        let token = ext.get::<Token>().ok_or(UserError::Internal)?;
+        token.validate_scope(scope)
+    }
+
+    pub async fn validator(
+        req: ServiceRequest,
+        credentials: BearerAuth,
+    ) -> Result<ServiceRequest, Error> {
+        let app_state = extract_app_state(&req)?;
+        let token = validate_token(credentials, app_state)?;
+        req.extensions_mut().insert(token);
+        Ok(req)
+    }
+
+    fn extract_app_state(req: &ServiceRequest) -> Result<&web::Data<AppState>, UserError> {
+        req.app_data::<web::Data<AppState>>()
+            .ok_or(UserError::Internal)
+    }
+
+    fn validate_token(
+        credentials: BearerAuth,
+        app_state: &web::Data<AppState>,
+    ) -> Result<Token, UserError> {
+        let token_str = credentials.token();
+        let hmac_key = app_state.hmac_key.lock().unwrap();
+        Token::validate(token_str, &hmac_key).map_err(UserError::unauthorized)
+    }
+}
