@@ -24,8 +24,9 @@ rust-s3  = { version = "0.30", default-features = false, features = ["tokio-rust
 anyhow = "1.0"
 thiserror = "1.0"
 tempfile = "3.3"
-env_logger = "0.9"
-log = "0.4"
+tracing-actix-web = "0.5"
+tracing-subscriber = { version = "0.3", features = ["json"] }
+tracing = "0.1"
 config = "0.12"
 ring = { version = "0.16", default-features = false, features = ["std"] }
 uuid = { version = "0.8", default-features = false, features = ["v4"] }

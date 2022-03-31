@@ -18,7 +18,7 @@ impl RepositoryStore {
     pub async fn add(&self, repository: Repository) -> Result<()> {
         let name = repository.name.clone();
         self.collection.insert_one(repository, None).await?;
-        log::info!("Stored new repository in database: {}", &name);
+        tracing::info!(%name, "Stored new repository in database");
         Ok(())
     }
 
@@ -36,7 +36,7 @@ impl RepositoryStore {
             .ok_or_else(|| {
                 DocumentNotFoundError::new(&format!("Repository doesn't exist: {name}"))
             })?;
-        log::debug!("{repository:#?}");
+        tracing::debug!(?repository);
         Ok(repository)
     }
 

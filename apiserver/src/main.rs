@@ -4,23 +4,26 @@ mod auth;
 mod database;
 mod encryption;
 mod error;
+mod logging;
 mod objectstorage;
 mod routes;
 mod secretstorage;
 mod settings;
 
+use std::str::FromStr;
 use std::sync::Mutex;
 
-use actix_web::{middleware, web, App, HttpServer};
+use actix_web::{web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::{anyhow, Result};
 use recesser_core::user::Scope;
+use ring::rand::SystemRandom;
+use tracing_subscriber::filter::LevelFilter;
 
 use auth::middleware::validator;
 use auth::{HmacKey, Token};
 use database::Database;
 use objectstorage::ObjectStorage;
-use ring::rand::SystemRandom;
 use secretstorage::SecretStorage;
 use settings::Settings;
 
@@ -36,11 +39,10 @@ pub struct AppState {
 async fn main() -> Result<()> {
     let s = Settings::new()?;
 
-    env_logger::Builder::new()
-        .parse_filters(&s.log_level)
-        .init();
+    let log_level = LevelFilter::from_str(&s.log_level)?;
+    tracing_subscriber::fmt().with_max_level(log_level).init();
 
-    log::debug!("{s:#?}");
+    tracing::debug!(settings = ?s);
 
     // Initialize object storage
     let objstore = ObjectStorage::new(&s.objectstorage_addr).await?;
@@ -63,7 +65,7 @@ async fn main() -> Result<()> {
             let hmac_key = HmacKey::new(&key_value);
             secstore.store_hmac_key(&key_value).await?;
             let initial_token = Token::create(Scope::Admin, &hmac_key)?;
-            log::info!("{}", initial_token.to_string()?);
+            println!("Initial token: {}", initial_token.to_string()?);
             hmac_key
         }
     };
@@ -80,7 +82,7 @@ async fn main() -> Result<()> {
         App::new()
             .app_data(app_state.clone())
             .configure(routes::config)
-            .wrap(middleware::Logger::default())
+            .wrap(logging::init())
             .wrap(HttpAuthentication::bearer(validator))
     })
     .bind(&s.addr)?

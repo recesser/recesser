@@ -25,7 +25,7 @@ async fn delete(
         .await
         .map_err(UserError::internal)?;
 
-    log::debug!("Deleted artifact {handle}.");
+    tracing::debug!(%handle, "Deleted artifact");
 
     let in_use = metadata_store
         .search_object_handle(&object_handle)
@@ -33,16 +33,18 @@ async fn delete(
         .map_err(UserError::internal)?;
 
     if in_use.is_empty() {
-        log::debug!("File {object_handle} is orphaned. Deleting it.");
+        tracing::debug!(%object_handle, "File is orphaned. Deleting it.");
         app_state
             .objstore
             .delete(&object_handle)
             .await
             .map_err(UserError::internal)?;
     } else {
-        log::debug!(
-            "File {object_handle} still referenced by {len} artifacts: {in_use:?}",
-            len = in_use.len()
+        tracing::debug!(
+            %object_handle,
+            number_of_artifacts = in_use.len(),
+            artifact_handles = ?in_use,
+            "Object still referenced by other artifacts",
         )
     }
 

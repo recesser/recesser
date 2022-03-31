@@ -47,12 +47,12 @@ impl UserError {
 }
 
 fn log_original_error(e: impl Debug) {
-    log::debug!("Original error: {e:?}")
+    tracing::debug!(error = ?e, "Original error");
 }
 
 impl actix_web::error::ResponseError for UserError {
     fn error_response(&self) -> HttpResponse {
-        log::debug!("{self}");
+        tracing::debug!(error = ?self);
         HttpResponseBuilder::new(self.status_code())
             .insert_header(http::header::ContentType::plaintext())
             .body(self.to_string())

@@ -66,6 +66,7 @@ impl SecretStorage {
     pub async fn setup(&self) -> Result<()> {
         let resp = self.client.post(self.url("/secret/config")).send().await?;
         check_body(resp).await?;
+        tracing::info!(addr = %self.addr, "Connected to secret storage");
         Ok(())
     }
 
@@ -82,7 +83,7 @@ impl SecretStorage {
             private_key.as_str().as_bytes(),
         )
         .await?;
-        log::info!("Stored new SSH key in secret storage: {fingerprint}");
+        tracing::info!(%fingerprint, "Stored new SSH key in secret storage");
         Ok(())
     }
 

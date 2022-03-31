@@ -37,8 +37,17 @@ impl ObjectStorage {
         .await?;
 
         let bucket = match create_bucket_response.success() {
-            true => create_bucket_response.bucket,
-            false => Bucket::new_with_path_style(BUCKET_NAME, region, credentials)?,
+            true => {
+                tracing::info!(
+                    bucket_name = BUCKET_NAME,
+                    "Bucket did not exist. Created it"
+                );
+                create_bucket_response.bucket
+            }
+            false => {
+                tracing::info!(bucket_name = BUCKET_NAME, "Bucket already exists");
+                Bucket::new_with_path_style(BUCKET_NAME, region, credentials)?
+            }
         };
 
         Ok(ObjectStorage { bucket })
@@ -50,11 +59,10 @@ impl ObjectStorage {
         file_path: impl AsRef<Path>,
     ) -> Result<()> {
         let mut file = fs::File::open(file_path).await?;
-        let code = self
+        let _code = self
             .bucket
             .put_object_stream(&mut file, content_address)
             .await?;
-        log::debug!("Received minio code: {code}");
         Ok(())
     }
 
@@ -64,11 +72,10 @@ impl ObjectStorage {
         filepath: &Path,
     ) -> Result<()> {
         let mut file = fs::File::create(&filepath).await?;
-        let code = self
+        let _code = self
             .bucket
             .get_object_stream(content_address, &mut file)
             .await?;
-        log::debug!("Received minio code: {code}");
         Ok(())
     }
 
@@ -80,14 +87,11 @@ impl ObjectStorage {
 
     pub async fn exists(&self, content_address: impl AsRef<str>) -> Result<bool> {
         let (_, code) = self.bucket.head_object(content_address).await?;
-        log::debug!("Received minio code: {code}");
         Ok(!matches!(code, 404))
     }
 
     pub async fn delete(&self, content_address: &str) -> Result<()> {
-        log::debug!("File content address for deletion {content_address}");
-        let (_, code) = self.bucket.delete_object(content_address).await?;
-        log::debug!("Received minio code: {code}");
+        let (_, _code) = self.bucket.delete_object(content_address).await?;
         Ok(())
     }
 }

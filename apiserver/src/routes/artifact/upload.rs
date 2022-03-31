@@ -38,7 +38,7 @@ async fn upload(
             }
             "metadata" => {
                 let handle = handle.as_ref().ok_or(UserError::BadRequest)?;
-                log::debug!("Extracted handle: {handle}");
+                tracing::debug!(%handle);
 
                 metadata = extract_metadata(&mut field)
                     .await
@@ -47,7 +47,7 @@ async fn upload(
             "file" => {
                 let handle = handle.as_ref().ok_or(UserError::BadRequest)?;
                 let metadata = metadata.as_ref().ok_or(UserError::BadRequest)?;
-                log::debug!("Extracted metadata: \n{metadata:#?}");
+                tracing::debug!(?metadata);
 
                 let file_exists = app_state
                     .objstore
@@ -56,9 +56,9 @@ async fn upload(
                     .map_err(UserError::internal)?;
 
                 if file_exists {
-                    log::debug!("File already exist in object storage. Skipping upload.");
+                    tracing::debug!("File already exist in object storage. Skipping upload.");
                 } else {
-                    log::debug!("File doesn't exist in object storage. Uploading it.");
+                    tracing::debug!("File doesn't exist in object storage. Uploading it.");
                     extract_encrypt_and_upload_file(&mut field, metadata, &app_state).await?
                 }
 
@@ -67,7 +67,7 @@ async fn upload(
                     .await
                     .map_err(UserError::internal)?;
             }
-            _ => log::error!("Unknown field: {field_name}"),
+            _ => tracing::debug!(name = field_name, "Unknown field"),
         }
     }
     Ok(HttpResponse::Ok().into())

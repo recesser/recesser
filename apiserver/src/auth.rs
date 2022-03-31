@@ -119,6 +119,10 @@ impl Token {
         }
     }
 
+    pub fn user_id(&self) -> &str {
+        &self.claims.id
+    }
+
     fn from_string(input: &str) -> Result<Self> {
         let mut split_input = input.split('.');
 

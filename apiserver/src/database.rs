@@ -20,7 +20,7 @@ pub struct Database {
 impl Database {
     pub async fn new(addr: &str) -> Result<Self> {
         let client = mongodb::Client::with_uri_str(addr).await?;
-        log::info!("Connected to database at: {}.", addr);
+        tracing::info!(addr, "Connected to database");
         let db = client.database("recesser");
         Ok(Self {
             repositories: RepositoryStore::new(db.collection("repositories")),

@@ -28,7 +28,6 @@ impl MetadataStore {
             metadata: metadata.clone(),
         };
         self.collection.insert_one(&metadata_doc, None).await?;
-        log::debug!("Inserted metadata: {:#?}", metadata_doc);
         Ok(())
     }
 
@@ -38,7 +37,6 @@ impl MetadataStore {
             .find_one(filter_handle(handle), None)
             .await?
             .ok_or_else(|| DocumentNotFoundError::new(handle))?;
-        log::debug!("Retrieved metadata: {:#?}", metadata_doc.metadata);
         Ok(metadata_doc.metadata)
     }
 
@@ -46,7 +44,6 @@ impl MetadataStore {
         let cursor = self.collection.find(None, None).await?;
         let metadata_docs: Vec<MetadataDoc> = cursor.try_collect().await?;
         let handles: Vec<String> = metadata_docs.into_iter().map(|x| x.handle).collect();
-        log::debug!("Retrieved artifact handles: {handles:#?}");
         Ok(handles)
     }
 
@@ -69,7 +66,6 @@ impl MetadataStore {
             .map(|x| x.metadata.object_handle.to_string())
             .collect();
 
-        log::debug!("Retrieved artifact handles with object handle: {handle}: {handles:#?}");
         Ok(handles)
     }
 }
