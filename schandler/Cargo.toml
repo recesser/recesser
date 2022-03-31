@@ -2,6 +2,7 @@
 name = "recesser-schandler"
 version = "0.1.0"
 authors = ["nikstur <nikstur@outlook.com>"]
+repository = "https://github.com/recesser/recesser"
 license = "MIT"
 edition = "2021"
 
