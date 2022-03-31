@@ -12,17 +12,15 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> std::result::Result<Self, ConfigError> {
-        let mut settings = Config::new();
-
-        settings.set_default("addr", "0.0.0.0:8080")?;
-        settings.set_default("objectstorage_addr", "http://minio.minio:9000")?;
-        settings.set_default("database_addr", "redis://redis.redis/")?;
-        settings.set_default("secretstorage_addr", "http://vault.vault:8200")?;
-        settings.set_default("log_level", "info")?;
-
-        settings.merge(File::with_name("config.toml").required(false))?;
-        settings.merge(Environment::with_prefix("recesser"))?;
-
-        settings.try_into()
+        let config = Config::builder()
+            .set_default("addr", "0.0.0.0:8080")?
+            .set_default("objectstorage_addr", "http://minio.minio:9000")?
+            .set_default("database_addr", "redis://redis.redis/")?
+            .set_default("secretstorage_addr", "http://vault.vault:8200")?
+            .set_default("log_level", "info")?
+            .add_source(File::with_name("config.toml").required(false))
+            .add_source(Environment::with_prefix("recesser"))
+            .build()?;
+        config.try_deserialize()
     }
 }
