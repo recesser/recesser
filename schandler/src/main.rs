@@ -1,11 +1,5 @@
 #![forbid(unsafe_code)]
 
-mod apiserver;
-mod argo_workflows;
-mod pipeline;
-mod repository;
-mod settings;
-
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,11 +9,11 @@ use recesser_core::repository::Repository;
 use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
 
-use apiserver::Apiserver;
-use argo_workflows::{ArgoWorkflowsServer, SSHSecret, Workflow};
-use pipeline::Pipeline;
-use repository::LocalRepository;
-use settings::Settings;
+use recesser_schandler::apiserver::Apiserver;
+use recesser_schandler::argo_workflows::{ArgoWorkflowsServer, SSHSecret, Workflow};
+use recesser_schandler::pipeline::Pipeline;
+use recesser_schandler::repository::LocalRepository;
+use recesser_schandler::settings::Settings;
 
 struct Global {
     apiserver: Apiserver,
