@@ -1917,6 +1917,7 @@ name = "recesser-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "atty",
  "clap",
  "env_logger",
  "log",

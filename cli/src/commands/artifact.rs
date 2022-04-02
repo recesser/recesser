@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -7,7 +8,7 @@ use recesser_core::metadata::Metadata;
 
 use crate::commands::Global;
 use crate::http::ArtifactEndpoints;
-use crate::parser::ArtifactCommands;
+use crate::parser::{self, ArtifactCommands};
 
 impl ArtifactCommands {
     pub fn call(self, global: Global) -> Result<()> {
@@ -15,8 +16,8 @@ impl ArtifactCommands {
             ArtifactCommands::Hash { file } => hash(file)?,
             ArtifactCommands::Upload { file, metadata } => upload(global, &file, metadata)?,
             ArtifactCommands::List {} => list(global)?,
-            ArtifactCommands::Download { handle } => download(global, &handle)?,
-            ArtifactCommands::Delete { handle } => delete(global, &handle)?,
+            ArtifactCommands::Download { handles } => download(global, handles)?,
+            ArtifactCommands::Delete { handles } => delete(global, handles)?,
         }
         Ok(())
     }
@@ -53,23 +54,46 @@ fn read_custom_metadata(filepath: PathBuf) -> Result<serde_json::Value> {
 }
 
 fn list(g: Global) -> Result<()> {
+    let mut writer = BufWriter::new(io::stdout());
+
     let handles = g.http.list()?;
     for handle in handles {
-        println!("{handle}");
+        writeln!(writer, "{handle}")?;
+    }
+
+    writer.flush()?;
+    Ok(())
+}
+
+fn download(g: Global, handles: Vec<String>) -> Result<()> {
+    let handles = parser::read_lines_from_stdin_if_emtpy(handles);
+    for handle in handles {
+        match download_artifact(&g, &handle) {
+            // Print directly instead of writing into BufWriter to give immediate feedback once
+            // a file is downloaded
+            Ok(_) => println!("Downloaded {handle}"),
+            Err(_) => println!("Failed to download {handle}"),
+        }
     }
     Ok(())
 }
 
-fn download(g: Global, handle: &str) -> Result<()> {
+fn download_artifact(g: &Global, handle: &str) -> Result<()> {
     g.http.download_file(handle, Path::new(handle))?;
     g.http
         .download_metadata(handle, Path::new(&format!("{handle}.meta.json")))?;
-    println!("Downloaded artifact: {handle}");
     Ok(())
 }
 
-fn delete(g: Global, handle: &str) -> Result<()> {
-    g.http.delete(handle)?;
-    println!("Successfully deleted artifact {handle}!");
+fn delete(g: Global, handles: Vec<String>) -> Result<()> {
+    let handles = parser::read_lines_from_stdin_if_emtpy(handles);
+    let mut writer = BufWriter::new(io::stdout());
+
+    for handle in handles {
+        g.http.delete(&handle)?;
+        writeln!(writer, "{handle}")?;
+    }
+
+    writer.flush()?;
     Ok(())
 }

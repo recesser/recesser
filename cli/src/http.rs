@@ -35,9 +35,12 @@ impl Client {
     }
 
     fn download_and_save_file(&self, url: &str, filepath: &Path) -> Result<()> {
-        let mut file_resp = self.client.get(url).send()?;
+        let mut resp = self.client.get(url).send()?;
+        if !resp.status().is_success() {
+            anyhow::bail!("{}", resp.text()?);
+        }
         let mut file = fs::File::create(filepath)?;
-        file_resp.copy_to(&mut file)?;
+        resp.copy_to(&mut file)?;
         Ok(())
     }
 
