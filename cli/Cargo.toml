@@ -20,6 +20,12 @@ env_logger = "0.9"
 log = "0.4"
 tempfile = "3.3"
 atty = "0.2.14"
+base64 = "*"
+rand = "0.7"
+ed25519-dalek = "1.0"
+openssl = { version = "0.10", features = ["vendored"] }
+ed25519 = { version = "1.3", features = ["pkcs8", "alloc", "pem"] }
+pkcs8 = { version = "0.8" }
 
 [dependencies.reqwest]
 version = "0.11"
