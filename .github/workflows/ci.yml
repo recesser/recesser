@@ -1,0 +1,41 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [master]
+jobs:
+  build_and_test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.60-x86_64-unknown-linux-gnu
+          components: rustfmt, clippy
+          override: true
+      
+      - name: Annotate commit with clippy warnings
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all -- -D warnings
+        
+      - name: Check format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt --all -- --check
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+      
+      - name: Release build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
