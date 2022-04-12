@@ -5,7 +5,7 @@
 ## Usage
 
 The primary mode of interaction with the system is through Git (for the source code)
-and the CLI (to manage artifacts and administer the system).
+and the CLI (to manage artifacts and administer the overall system).
 
 ### CLI
 
@@ -47,8 +47,8 @@ for linux.
 ### Backend Infrastructure
 
 The backend infrastructure of Recesser is installed on a single Kubernetes cluster. The installation
-manifests can be found in the [Recesser Infrastructure](https://github.com/recesser/infrastructure)
-repository.
+manifests and instructions can be found in the [Recesser
+Infrastructure](https://github.com/recesser/infrastructure) repository.
 
 ## Development
 
