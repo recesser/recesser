@@ -6,7 +6,6 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 use recesser_core::repository::Repository;
-use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
 
 use recesser_schandler::apiserver::Apiserver;
@@ -48,7 +47,7 @@ async fn main() -> Result<()> {
 #[tracing::instrument(skip_all, err(Display))]
 async fn poll_all_repositories(g: Arc<Global>) -> Result<()> {
     let repositories = g.apiserver.list_repositories().await?;
-    tracing::event!(Level::INFO, "Retrieved list of all repositories");
+    tracing::info!("Retrieved list of all repositories");
 
     // Start a task for each repository
     let mut handles = Vec::new();
@@ -68,25 +67,22 @@ async fn poll_all_repositories(g: Arc<Global>) -> Result<()> {
 #[tracing::instrument(skip_all, err(Display), fields(name = %repository.name))]
 async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
     let private_key = g.apiserver.get_ssh_key(&repository.name).await?;
-    tracing::event!(
-        Level::INFO,
+    tracing::info!(
         message = "Retrieved private key from secret storage",
         fingerprint = %repository.public_key.fingerprint
     );
 
     let local_repository = LocalRepository::from_remote(&repository.url, &private_key)?;
-    tracing::event!(Level::INFO, message = "Cloned repository from remote");
+    tracing::info!(message = "Cloned repository from remote");
 
     if repository.last_commit == local_repository.last_commit {
-        tracing::event!(
-            Level::INFO,
+        tracing::info!(
             message = "Last commit of repository has not changed",
             commit_id = %local_repository.last_commit
         );
         return Ok(());
     }
-    tracing::event!(
-        Level::INFO,
+    tracing::info!(
         message = "Last commit of repository has changed",
         old_commit_id = %repository.last_commit,
         new_commit_id = %local_repository.last_commit
@@ -99,6 +95,6 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
     let workflow = Workflow::from_pipeline(pipeline, repository, ssh_secret_name)?;
     g.argo_workflows.submit(workflow).await?;
 
-    tracing::event!(Level::INFO, message = "Successfully polled repository");
+    tracing::info!(message = "Successfully polled repository");
     Ok(())
 }
