@@ -18,6 +18,8 @@ jobs:
           components: rustfmt, clippy
           override: true
       
+      - uses: Swatinem/rust-cache@v1.3.0
+      
       - name: Annotate commit with clippy warnings
         uses: actions-rs/clippy-check@v1
         with:
