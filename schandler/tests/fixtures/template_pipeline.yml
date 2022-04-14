@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: TemplatePipeline
+metadata:
+  name: twitter-2016
+spec:
+  inputs:
+    - AQExRKu0RUToW4g-jgmhVDuvDzpRpHgkjIsB6ZXpu_JwBA
+    - AQEUo_pBYYItKCM2TI29WFfh-wi7kkyKGcbS-xDlUexpZw
+  template:
+    name: Python
+    version: 1.0.0
+  dependencies: requirements.txt
+  entrypoint: [ main.py ]
