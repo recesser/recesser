@@ -2,6 +2,7 @@ pub use server::ArgoWorkflowsServer;
 pub use ssh_secret::SSHSecret;
 pub use workflow::Workflow;
 
+/// HTTP client for Argo Workflows server
 mod server {
     use anyhow::Result;
     use reqwest::Client;
