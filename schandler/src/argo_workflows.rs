@@ -88,6 +88,7 @@ mod workflow {
     pub struct Workflow {
         api_version: String,
         kind: String,
+        metadata: Metadata,
         spec: WorkflowSpec,
     }
 
@@ -108,7 +109,7 @@ mod workflow {
             if let Some(inputs) = pipeline.inputs {
                 let download_artifacts_container = Container {
                     image: CLI_IMAGE.into(),
-                    command: vec![format!("rcssr download {}", inputs.join(""))],
+                    command: vec![format!("rcssr download {}", inputs.join(" "))],
                     args: None,
                     working_dir: None,
                 };
@@ -172,16 +173,22 @@ mod workflow {
                 entrypoint: "steps".into(),
                 templates,
             };
-            Ok(Self::new(spec))
+            Ok(Self::new(repository.name, spec))
         }
 
-        fn new(spec: WorkflowSpec) -> Self {
+        fn new(name: String, spec: WorkflowSpec) -> Self {
             Self {
                 api_version: "argoproj.io/v1alpha1".into(),
                 kind: "Workflow".into(),
+                metadata: Metadata { name },
                 spec,
             }
         }
+    }
+
+    #[derive(Serialize, Debug)]
+    struct Metadata {
+        name: String,
     }
 
     #[derive(Serialize, Debug)]
@@ -190,6 +197,7 @@ mod workflow {
         templates: Vec<Template>,
     }
 
+    #[serde_with::skip_serializing_none]
     #[derive(Serialize, Debug)]
     struct Template {
         name: String,
@@ -203,6 +211,7 @@ mod workflow {
         artifacts: Vec<Artifact>,
     }
 
+    #[serde_with::skip_serializing_none]
     #[derive(Serialize, Debug)]
     struct Artifact {
         name: String,
@@ -234,6 +243,7 @@ mod workflow {
         }
     }
 
+    #[serde_with::skip_serializing_none]
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     struct Container {
