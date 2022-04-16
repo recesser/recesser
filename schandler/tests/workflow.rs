@@ -14,22 +14,15 @@ const SCHEMA_URL: &str =
     "https://raw.githubusercontent.com/argoproj/argo-workflows/v3.3.1/api/jsonschema/schema.json";
 
 #[test]
-fn can_transform_pipeline_into_workflow() -> Result<()> {
-    let workflow = mock_workflow()?;
-    println!("{}", serde_yaml::to_string(&workflow)?);
-    Ok(())
-}
-
-#[test]
-fn produces_valid_json() -> Result<()> {
+fn can_be_converted_to_schema_conforming_json() -> Result<()> {
     let schema = retrieve_argo_workflows_schema()?;
     let compiled_schema = JSONSchema::compile(&schema).expect("Schema is not valid");
 
     let workflow = mock_workflow()?;
-    let instance = serde_json::to_value(&workflow)?;
+    let serialized_workflow = serde_json::to_value(&workflow)?;
 
-    if !compiled_schema.is_valid(&instance) {
-        let result: BasicOutput = compiled_schema.apply(&instance).basic();
+    if !compiled_schema.is_valid(&serialized_workflow) {
+        let result: BasicOutput = compiled_schema.apply(&serialized_workflow).basic();
         println!("{}", serde_json::to_string_pretty(&result)?);
         anyhow::bail!("Workflow does not conform to schema");
     }
@@ -44,8 +37,7 @@ fn retrieve_argo_workflows_schema() -> Result<serde_json::Value> {
 fn mock_workflow() -> Result<Workflow> {
     let pipeline: Pipeline = serde_yaml::from_str(&read_fixture("template_pipeline.yml")?)?;
     let repository = mock_repository();
-    let ssh_secret_name = "verySecretKey".into();
-    Workflow::from_pipeline(pipeline, repository, ssh_secret_name)
+    Workflow::from_pipeline(pipeline, repository)
 }
 
 fn mock_repository() -> Repository {

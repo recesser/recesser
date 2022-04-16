@@ -7,7 +7,7 @@ spec:
     - AQExRKu0RUToW4g-jgmhVDuvDzpRpHgkjIsB6ZXpu_JwBA
     - AQEUo_pBYYItKCM2TI29WFfh-wi7kkyKGcbS-xDlUexpZw
   template:
-    name: Python
+    name: python
     version: 1.0.0
   dependencies: requirements.txt
   entrypoint: [ main.py ]

@@ -41,10 +41,10 @@ mod ssh_secret {
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct SSHSecret {
-        api_version: String,
-        kind: String,
+        api_version: &'static str,
+        kind: &'static str,
         metadata: SSHSecretMetadata,
-        r#type: String,
+        r#type: &'static str,
         data: SSHSecretData,
     }
 
@@ -62,10 +62,10 @@ mod ssh_secret {
     impl SSHSecret {
         pub fn new(name: String, private_key: String) -> Self {
             Self {
-                api_version: "v1".into(),
-                kind: "Secret".into(),
+                api_version: "v1",
+                kind: "Secret",
                 metadata: SSHSecretMetadata { name },
-                r#type: "kubernetes.io/ssh-auth".into(),
+                r#type: "kubernetes.io/ssh-auth",
                 data: SSHSecretData {
                     ssh_privatekey: private_key,
                 },
@@ -79,111 +79,15 @@ mod workflow {
     use recesser_core::repository::Repository;
     use serde::Serialize;
 
-    use crate::pipeline::{Kind, Pipeline};
-
-    const CLI_IMAGE: &str = "recesser/cli:0.1.0";
+    use crate::pipeline::{Kind, Pipeline, TemplatePipeline};
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct Workflow {
-        api_version: String,
-        kind: String,
+        api_version: &'static str,
+        kind: &'static str,
         metadata: Metadata,
         spec: WorkflowSpec,
-    }
-
-    impl Workflow {
-        pub fn from_pipeline(
-            pipeline: Pipeline,
-            repository: Repository,
-            ssh_secret_name: String,
-        ) -> Result<Self> {
-            let pipeline = match pipeline.kind {
-                Kind::TemplatePipeline(template_pipeline) => template_pipeline,
-                _ => return Err(anyhow::anyhow!("CustomTemplate is not yet implemented")),
-            };
-
-            let mut templates = Vec::new();
-            let mut workflow_steps = Vec::new();
-
-            if let Some(inputs) = pipeline.inputs {
-                let download_artifacts_container = Container {
-                    image: CLI_IMAGE.into(),
-                    command: vec![format!("rcssr download {}", inputs.join(" "))],
-                    args: None,
-                    working_dir: None,
-                };
-                let download_artifacts_template = Template {
-                    name: "download_artifacts".into(),
-                    inputs: None,
-                    container: Some(download_artifacts_container),
-                    steps: None,
-                };
-                templates.push(download_artifacts_template);
-
-                let download_artifacts_step = WorkflowStep {
-                    name: "Download Artifacts Step".into(),
-                    template: "download_artifacts".into(),
-                };
-                workflow_steps.push(vec![download_artifacts_step]);
-            }
-
-            let git_artifact = GitArtifact {
-                repo: repository.url,
-                revision: repository.last_commit.to_string(),
-                ssh_private_key_secret: SSHPrivateKeySecret::new(ssh_secret_name),
-                depth: 0,
-            };
-            let main_template_inputs = Inputs {
-                artifacts: vec![Artifact {
-                    name: "source-code".into(),
-                    path: None,
-                    git: Some(git_artifact),
-                }],
-            };
-            let main_container = Container {
-                image: format!("{}:{}", pipeline.template.name, pipeline.template.version),
-                command: pipeline.entrypoint,
-                args: None,
-                working_dir: None,
-            };
-            let main_template = Template {
-                name: "main".into(),
-                inputs: Some(main_template_inputs),
-                container: Some(main_container),
-                steps: None,
-            };
-            templates.push(main_template);
-
-            let main_step = WorkflowStep {
-                name: "Main Step".into(),
-                template: "main".into(),
-            };
-            workflow_steps.push(vec![main_step]);
-
-            let steps_template = Template {
-                name: "steps".into(),
-                inputs: None,
-                container: None,
-                steps: Some(workflow_steps),
-            };
-            templates.push(steps_template);
-
-            let spec = WorkflowSpec {
-                entrypoint: "steps".into(),
-                templates,
-            };
-            Ok(Self::new(repository.name, spec))
-        }
-
-        fn new(name: String, spec: WorkflowSpec) -> Self {
-            Self {
-                api_version: "argoproj.io/v1alpha1".into(),
-                kind: "Workflow".into(),
-                metadata: Metadata { name },
-                spec,
-            }
-        }
     }
 
     #[derive(Serialize, Debug)]
@@ -193,14 +97,14 @@ mod workflow {
 
     #[derive(Serialize, Debug)]
     struct WorkflowSpec {
-        entrypoint: String,
+        entrypoint: &'static str,
         templates: Vec<Template>,
     }
 
     #[serde_with::skip_serializing_none]
     #[derive(Serialize, Debug)]
     struct Template {
-        name: String,
+        name: &'static str,
         inputs: Option<Inputs>,
         container: Option<Container>,
         steps: Option<Vec<Vec<WorkflowStep>>>,
@@ -214,7 +118,7 @@ mod workflow {
     #[serde_with::skip_serializing_none]
     #[derive(Serialize, Debug)]
     struct Artifact {
-        name: String,
+        name: &'static str,
         path: Option<String>,
         git: Option<GitArtifact>,
     }
@@ -223,7 +127,7 @@ mod workflow {
     #[serde(rename_all = "camelCase")]
     struct GitArtifact {
         repo: String,
-        revision: String,
+        revision: &'static str,
         ssh_private_key_secret: SSHPrivateKeySecret,
         depth: u32,
     }
@@ -231,16 +135,7 @@ mod workflow {
     #[derive(Serialize, Debug)]
     struct SSHPrivateKeySecret {
         name: String,
-        key: String,
-    }
-
-    impl SSHPrivateKeySecret {
-        pub fn new(name: String) -> Self {
-            Self {
-                name,
-                key: "ssh-private-key".into(),
-            }
-        }
+        key: &'static str,
     }
 
     #[serde_with::skip_serializing_none]
@@ -255,7 +150,136 @@ mod workflow {
 
     #[derive(Serialize, Debug)]
     struct WorkflowStep {
-        name: String,
-        template: String,
+        name: &'static str,
+        template: &'static str,
+    }
+
+    impl Workflow {
+        pub fn from_pipeline(pipeline: Pipeline, repository: Repository) -> Result<Self> {
+            let pipeline = match pipeline.kind {
+                Kind::TemplatePipeline(template_pipeline) => template_pipeline,
+                _ => return Err(anyhow::anyhow!("CustomTemplate is not yet implemented")),
+            };
+
+            let mut templates = Vec::new();
+            let mut workflow_steps = Vec::new();
+
+            // Add inputs step if artifacts are specified in pipeline
+            if let Some(inputs) = &pipeline.inputs {
+                templates.push(download_artifacts_template(inputs));
+                workflow_steps.push(download_artifacts_step());
+            }
+
+            // Add main template that executes code
+            templates.push(main_template(&repository, &pipeline));
+            workflow_steps.push(main_step());
+
+            // Add execution order template
+            templates.push(steps_template(workflow_steps));
+
+            let spec = WorkflowSpec::new(templates);
+            Ok(Self::new(repository.name, spec))
+        }
+
+        fn new(name: String, spec: WorkflowSpec) -> Self {
+            Self {
+                api_version: "argoproj.io/v1alpha1",
+                kind: "Workflow",
+                metadata: Metadata { name },
+                spec,
+            }
+        }
+    }
+
+    fn download_artifacts_template(inputs: &[String]) -> Template {
+        let download_artifacts_container = Container {
+            image: "recesser/cli:0.1.0".into(),
+            command: vec![format!("rcssr download {}", inputs.join(" "))],
+            args: None,
+            working_dir: None,
+        };
+        Template {
+            name: "download_artifacts",
+            inputs: None,
+            container: Some(download_artifacts_container),
+            steps: None,
+        }
+    }
+
+    fn download_artifacts_step() -> Vec<WorkflowStep> {
+        vec![WorkflowStep {
+            name: "Download Artifacts Step",
+            template: "download_artifacts",
+        }]
+    }
+
+    fn main_template_inputs(repository: &Repository) -> Inputs {
+        let git_artifact = GitArtifact {
+            repo: repository.url.clone(),
+            revision: "HEAD",
+            ssh_private_key_secret: SSHPrivateKeySecret::new(
+                repository.public_key.fingerprint.to_string(),
+            ),
+            depth: 0,
+        };
+        Inputs {
+            artifacts: vec![Artifact {
+                name: "source-code",
+                path: None,
+                git: Some(git_artifact),
+            }],
+        }
+    }
+
+    fn main_template(repository: &Repository, pipeline: &TemplatePipeline) -> Template {
+        let main_container = Container {
+            image: format!(
+                "recesser/{}-template:{}",
+                pipeline.template.name, pipeline.template.version
+            ),
+            command: pipeline.entrypoint.clone(),
+            args: None,
+            working_dir: None,
+        };
+        Template {
+            name: "main",
+            inputs: Some(main_template_inputs(repository)),
+            container: Some(main_container),
+            steps: None,
+        }
+    }
+
+    fn main_step() -> Vec<WorkflowStep> {
+        vec![WorkflowStep {
+            name: "Main Step",
+            template: "main",
+        }]
+    }
+
+    fn steps_template(workflow_steps: Vec<Vec<WorkflowStep>>) -> Template {
+        Template {
+            name: "steps",
+            inputs: None,
+            container: None,
+            steps: Some(workflow_steps),
+        }
+    }
+
+    impl WorkflowSpec {
+        fn new(templates: Vec<Template>) -> Self {
+            Self {
+                entrypoint: "steps",
+                templates,
+            }
+        }
+    }
+
+    impl SSHPrivateKeySecret {
+        pub fn new(name: String) -> Self {
+            Self {
+                name,
+                key: "ssh-private-key",
+            }
+        }
     }
 }
