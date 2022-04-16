@@ -4,7 +4,7 @@ f = "fmt --all -- --check"
 c = "check --workspace"
 t = "test"
 b = "build"
-a = "audit --ignore RUSTSEC-2020-0071 --ignore RUSTSEC-2020-0159"
+a = "audit"
 
 [build]
 target = "x86_64-unknown-linux-gnu"
