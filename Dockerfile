@@ -1,8 +1,9 @@
+ARG RUST_VERSION
 ARG TARGET=x86_64-unknown-linux-gnu
 ARG DISTROLESS_IMG=cc
 ARG BINARY
 
-FROM rust:1.59.0 AS chef
+FROM rust:${RUST_VERSION} AS chef
 ARG TARGET
 RUN apt-get update && \
     apt-get install --yes --quiet \
