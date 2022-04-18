@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: {{ repository.name }}-{{ metadata.name }}
+spec:
+  entrypoint: steps
+  templates:
+    {% if pipeline.inputs %}
+    - name: download_artifacts
+      container:
+        image: "recesser/cli:0.1.0"
+        command:
+          - rcssr 
+          - download
+          {% for i in pipeline.inputs %}
+          - {{ i }}
+          {% endfor %}
+    {% endif %}
+    - name: main
+      inputs:
+        artifacts:
+          - name: source-code
+            git:
+              repo: {{ repository.url }}
+              revision: HEAD
+              sshPrivateKeySecret:
+                name: {{ repository.public_key.fingerprint }}
+                key: ssh-private-key
+              depth: 0
+      container:
+        image: "recesser/{{ pipeline.template.name }}-template:{{ pipeline.template.version }}"
+        args:
+          - {{ pipeline.dependencies }}
+          - {{ pipeline.entrypoint }}
+    - name: steps
+      steps:
+        {% if pipeline.inputs %}
+        - - name: Download Artifacts Step
+            template: download_artifacts
+        {% endif %}
+        - - name: Main Step
+            template: main

@@ -1542,6 +1542,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "minijinja"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "359c4820413be7706e93999171652e140578384f85faac14cb22d350bd0fbabf"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2178,6 +2187,8 @@ dependencies = [
  "config",
  "git2",
  "jsonschema",
+ "lazy_static",
+ "minijinja",
  "recesser-core",
  "reqwest",
  "serde",

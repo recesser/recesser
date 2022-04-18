@@ -10,4 +10,4 @@ spec:
     name: python
     version: 1.0.0
   dependencies: requirements.txt
-  entrypoint: [ main.py ]
+  entrypoint: main.py

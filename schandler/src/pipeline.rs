@@ -31,7 +31,7 @@ pub struct TemplatePipeline {
     pub inputs: Option<Vec<String>>,
     pub template: Template,
     pub dependencies: Option<String>,
-    pub entrypoint: Vec<String>,
+    pub entrypoint: String,
     pub args: Option<Vec<String>>,
     pub working_dir: Option<String>,
 }

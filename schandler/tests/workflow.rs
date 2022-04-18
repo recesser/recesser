@@ -14,12 +14,13 @@ const SCHEMA_URL: &str =
     "https://raw.githubusercontent.com/argoproj/argo-workflows/v3.3.1/api/jsonschema/schema.json";
 
 #[test]
-fn can_be_converted_to_schema_conforming_json() -> Result<()> {
+fn produces_schema_conforming_json() -> Result<()> {
     let schema = retrieve_argo_workflows_schema()?;
     let compiled_schema = JSONSchema::compile(&schema).expect("Schema is not valid");
 
     let workflow = mock_workflow()?;
     let serialized_workflow = serde_json::to_value(&workflow)?;
+    println!("{}", serde_yaml::to_string(&workflow)?);
 
     if !compiled_schema.is_valid(&serialized_workflow) {
         let result: BasicOutput = compiled_schema.apply(&serialized_workflow).basic();
@@ -45,7 +46,7 @@ fn mock_repository() -> Repository {
         name: "mockRepository".into(),
         url: "notAUrl".into(),
         public_key: PublicKey {
-            public_key: "notAKey".into(),
+            public_key: "notAPublicKey".into(),
             fingerprint: Fingerprint::new("notAFingerprint".into()),
         },
         last_commit: CommitID::new(None),

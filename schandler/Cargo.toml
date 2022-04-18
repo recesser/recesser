@@ -24,6 +24,8 @@ tempfile = "3.3"
 tracing-subscriber = { version = "0.3", features = ["json"] }
 tracing = "0.1"
 config = "0.12"
+minijinja = "0.15"
+lazy_static = "1.4"
 
 [dev-dependencies]
 jsonschema = "0.15"

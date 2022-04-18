@@ -93,7 +93,7 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
 
     let pipeline = Pipeline::from_repo(&local_repository).await?;
     let workflow = Workflow::from_pipeline(pipeline, repository)?;
-    g.argo_workflows.submit(workflow).await?;
+    g.argo_workflows.submit(&workflow).await?;
 
     tracing::info!(message = "Successfully polled repository");
     Ok(())
