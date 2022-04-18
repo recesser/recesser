@@ -1,6 +1,6 @@
 # Recesser
 
-**A Git-Based System for Reproducible Computational Social Science Research**
+**A Git-Based Automation System for Reproducible Computational Social Science Research**
 
 ## Usage
 
