@@ -9,7 +9,7 @@ use recesser_core::repository::Repository;
 use tracing_subscriber::filter::LevelFilter;
 
 use recesser_schandler::apiserver::Apiserver;
-use recesser_schandler::argo_workflows::{ArgoWorkflowsServer, SSHSecret, Workflow};
+use recesser_schandler::kubernetes::argo_workflows::{ArgoWorkflowsServer, Workflow};
 use recesser_schandler::pipeline::Pipeline;
 use recesser_schandler::repository::LocalRepository;
 use recesser_schandler::settings::Settings;
@@ -87,9 +87,6 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
         old_commit_id = %repository.last_commit,
         new_commit_id = %local_repository.last_commit
     );
-
-    let ssh_secret_name = repository.public_key.fingerprint.to_string();
-    let _ssh_secret = SSHSecret::new(ssh_secret_name, private_key);
 
     let pipeline = Pipeline::from_repo(&local_repository).await?;
     let workflow = Workflow::from_pipeline(pipeline, repository)?;

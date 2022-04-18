@@ -26,6 +26,8 @@ tracing = "0.1"
 config = "0.12"
 minijinja = "0.15"
 lazy_static = "1.4"
+kube = "0.71.0"
+k8s-openapi = { version = "0.14.0", features = ["v1_22"] }
 
 [dev-dependencies]
 jsonschema = "0.15"
