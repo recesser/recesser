@@ -12,7 +12,7 @@ pub struct Settings {
 impl Settings {
     pub fn new() -> std::result::Result<Self, ConfigError> {
         let config = Config::builder()
-            .set_default("apiserver_addr", "http://apiserver.apiserver:8080")?
+            .set_default("apiserver_addr", "http://apiserver.recesser:8080")?
             .set_default(
                 "argo_workflows_addr",
                 "http://argo_workflows.argo_workflows:8080",
