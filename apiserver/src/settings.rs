@@ -15,7 +15,7 @@ impl Settings {
         let config = Config::builder()
             .set_default("addr", "0.0.0.0:8080")?
             .set_default("objectstorage_addr", "http://minio.minio:9000")?
-            .set_default("database_addr", "redis://redis.redis/")?
+            .set_default("database_addr", "mongodb://mongo.mongo:27017")?
             .set_default("secretstorage_addr", "http://vault.vault:8200")?
             .set_default("log_level", "info")?
             .add_source(File::with_name("config.toml").required(false))
