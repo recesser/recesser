@@ -1,20 +1,37 @@
 services:
-  # apiserver:
-  #   image: recesser/apiserver
-  #   build:
-  #     context: ./
-  #     dockerfile: Dockerfile
-  #     args:
-  #       BINARY: apiserver
-  #   command: apiserver
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     RECESSER_DATABASE_ADDR: mongodb://mongo:27017
-  #     RECESSER_OBJECTSTORAGE_ADDR: http://minio:9000
-  #     RECESSER_LOG_LEVEL: debug
-  #     RECESSER_OBJECTSTORAGE_USER: console
-  #     RECESSER_OBJECTSTORAGE_PASSWORD: console123
+  apiserver:
+    image: recesser/apiserver
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        BINARY: apiserver
+    command: apiserver
+    ports:
+      - 8080:8080
+    environment:
+      RECESSER_DATABASE_ADDR: mongodb://mongo:27017
+      RECESSER_OBJECTSTORAGE_ADDR: http://minio:9000
+      RECESSER_LOG_LEVEL: debug
+      RECESSER_SECRETSTORAGE_USER: vault123
+      RECESSER_OBJECTSTORAGE_USER: console
+      RECESSER_OBJECTSTORAGE_PASSWORD: console123
+    depends_on:
+      - minio
+      - vault
+  schandler:
+    image: recesser/schandler
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        BINARY: schandler
+    command: schandler
+    environment:
+      RUST_BACKTRACE: "1"
+      RECESSER_APISERVER_ADDR: http://apiserver:8080
+    depends_on:
+      - apiserver
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"

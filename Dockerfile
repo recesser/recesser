@@ -7,6 +7,7 @@ FROM rust:${RUST_VERSION} AS chef
 ARG TARGET
 RUN apt-get update && \
     apt-get install --yes --quiet \
+        cmake \
         musl-dev \
         musl-tools && \
     rustup target add x86_64-unknown-linux-musl && \

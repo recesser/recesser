@@ -12,7 +12,6 @@ path = "src/main.rs"
 
 [dependencies]
 recesser-core = { version = "0.1", path = "../core" }
-git2 = { version = "0.14", features = ["vendored-openssl"] }
 reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
 tokio = { version = "1.15", features = ["macros", "rt-multi-thread", "time", "fs"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -28,6 +27,11 @@ minijinja = "0.15"
 lazy_static = "1.4"
 kube = "0.71.0"
 k8s-openapi = { version = "0.14.0", features = ["v1_22"] }
+
+[dependencies.git2]
+version = "0.14"
+default-features = false
+features = ["ssh", "ssh_key_from_memory", "vendored-openssl", "vendored-libgit2", "zlib-ng-compat"]
 
 [dev-dependencies]
 jsonschema = "0.15"
