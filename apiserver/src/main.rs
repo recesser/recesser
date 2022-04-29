@@ -24,6 +24,7 @@ use tracing_subscriber::filter::LevelFilter;
 use auth::middleware::validator;
 use auth::{HmacKey, Token};
 use database::Database;
+use kubernetes::KubernetesApiserver;
 use objectstorage::ObjectStorage;
 use secretstorage::SecretStorage;
 use settings::Settings;
@@ -32,6 +33,7 @@ pub struct AppState {
     objstore: ObjectStorage,
     database: Database,
     secstore: SecretStorage,
+    k8s_apiserver: KubernetesApiserver,
     hmac_key: Mutex<HmacKey>,
     rng: SystemRandom,
 }
@@ -57,6 +59,9 @@ async fn main() -> Result<()> {
     let secstore = SecretStorage::new(&s.secretstorage_addr, vault_token)?;
     secstore.setup().await?;
 
+    // Initialize kubernetes apiserver
+    let k8s_apiserver = KubernetesApiserver::new().await?;
+
     // Initialize HMAC key and access token
     let rng = ring::rand::SystemRandom::new();
     let hmac_key = match secstore.get_hmac_key().await {
@@ -66,6 +71,9 @@ async fn main() -> Result<()> {
             let hmac_key = HmacKey::new(&key_value);
             secstore.store_hmac_key(&key_value).await?;
             let initial_token = Token::create(Scope::Admin, &hmac_key)?;
+            k8s_apiserver
+                .create_token_secret("apiserver-token", &initial_token)
+                .await?;
             println!("Initial token: {}", initial_token.to_string()?);
             hmac_key
         }
@@ -75,6 +83,7 @@ async fn main() -> Result<()> {
         objstore,
         database,
         secstore,
+        k8s_apiserver,
         hmac_key: Mutex::new(hmac_key),
         rng,
     });
