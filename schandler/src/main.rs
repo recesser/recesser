@@ -9,7 +9,7 @@ use recesser_core::repository::Repository;
 use tracing_subscriber::filter::LevelFilter;
 
 use recesser_schandler::apiserver::Apiserver;
-use recesser_schandler::kubernetes::argo_workflows::{ArgoWorkflowsServer, Workflow};
+use recesser_schandler::argo_workflows::{ArgoWorkflowsServer, Workflow};
 use recesser_schandler::pipeline::Pipeline;
 use recesser_schandler::repository::LocalRepository;
 use recesser_schandler::settings::Settings;

@@ -1,5 +1,5 @@
 pub mod apiserver;
-pub mod kubernetes;
+pub mod argo_workflows;
 pub mod pipeline;
 pub mod repository;
 pub mod settings;

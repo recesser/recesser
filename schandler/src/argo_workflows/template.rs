@@ -8,8 +8,6 @@ lazy_static::lazy_static! {
 
         let template_workflow = include_str!("templates/template_workflow.yml.j2");
         env.add_template("template_workflow", template_workflow).unwrap();
-        let template_workflow = include_str!("templates/ssh_private_key.yml.j2");
-        env.add_template("ssh_private_key", template_workflow).unwrap();
 
         env
     };
@@ -17,14 +15,12 @@ lazy_static::lazy_static! {
 
 pub enum Template {
     TemplateWorkflow,
-    SSHPrivateKey,
 }
 
 impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Template::TemplateWorkflow => "template_workflow",
-            Template::SSHPrivateKey => "ssh_private_key",
         };
         write!(f, "{s}")
     }

@@ -32,6 +32,8 @@ config = "0.12"
 ring = { version = "0.16", default-features = false, features = ["std"] }
 uuid = { version = "0.8", default-features = false, features = ["v4"] }
 mime = "0.3"
+kube = "0.71.0"
+k8s-openapi = { version = "0.14.0", features = ["v1_22"] }
 
 [dependencies.reqwest]
 version = "0.11"

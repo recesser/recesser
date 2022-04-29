@@ -4,6 +4,7 @@ mod auth;
 mod database;
 mod encryption;
 mod error;
+mod kubernetes;
 mod logging;
 mod objectstorage;
 mod routes;

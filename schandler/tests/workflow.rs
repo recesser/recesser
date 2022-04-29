@@ -4,7 +4,7 @@ use anyhow::Result;
 use jsonschema::output::BasicOutput;
 use jsonschema::JSONSchema;
 use recesser_core::repository::{CommitID, Fingerprint, PublicKey, Repository};
-use recesser_schandler::kubernetes::argo_workflows::Workflow;
+use recesser_schandler::argo_workflows::Workflow;
 use recesser_schandler::pipeline::Pipeline;
 use reqwest::blocking;
 

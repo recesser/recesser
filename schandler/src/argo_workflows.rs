@@ -1,10 +1,13 @@
+mod template; 
+
 use anyhow::Result;
 use recesser_core::repository::Repository;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::kubernetes::template::{construct_from_template, Template};
 use crate::pipeline::{Kind, Pipeline};
+
+use template::{construct_from_template, Template};
 
 /// HTTP client for Argo Workflows server
 #[derive(Clone)]
