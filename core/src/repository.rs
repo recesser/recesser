@@ -60,6 +60,12 @@ impl PrivateKey {
     }
 }
 
+impl fmt::Display for PrivateKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl Fingerprint {
     pub fn new(s: String) -> Self {
         Self(s)
