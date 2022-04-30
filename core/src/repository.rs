@@ -26,13 +26,13 @@ pub struct KeyPair {
 #[serde(transparent)]
 pub struct PrivateKey(String);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PublicKey {
     pub public_key: String,
     pub fingerprint: Fingerprint,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Fingerprint(String);
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -69,6 +69,10 @@ impl fmt::Display for PrivateKey {
 impl Fingerprint {
     pub fn new(s: String) -> Self {
         Self(s)
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
