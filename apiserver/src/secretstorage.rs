@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use anyhow::Result;
 use recesser_core::encoding::base64;
-use recesser_core::repository::PrivateKey;
+use recesser_core::repository::KeyPair;
 use reqwest::Client;
 use reqwest::{header, Response};
 use ring::digest::SHA256_OUTPUT_LEN;
@@ -76,14 +76,15 @@ impl SecretStorage {
         Ok(String::from_utf8(key)?)
     }
 
-    pub async fn store_ssh_key(&self, fingerprint: &str, private_key: &PrivateKey) -> Result<()> {
-        let base64_fingerprint = base64::encode(fingerprint.as_bytes());
+    pub async fn store_ssh_key(&self, key_pair: &KeyPair) -> Result<()> {
+        let base64_fingerprint =
+            base64::encode(key_pair.public_key.fingerprint.as_str().as_bytes());
         self.set(
             &format!("ssh_keys/{base64_fingerprint}"),
-            private_key.as_str().as_bytes(),
+            key_pair.private_key.as_str().as_bytes(),
         )
         .await?;
-        tracing::info!(%fingerprint, "Stored new SSH key in secret storage");
+        tracing::info!(%key_pair.public_key.fingerprint, "Stored new SSH key in secret storage");
         Ok(())
     }
 

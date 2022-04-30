@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use anyhow::Result;
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::{Api, ObjectMeta, PostParams};
-use recesser_core::repository::PrivateKey;
+use recesser_core::repository::KeyPair;
 
 use crate::auth::Token;
 
@@ -24,15 +24,15 @@ impl KubernetesApiserver {
         })
     }
 
-    pub async fn create_ssh_secret(&self, name: &str, private_key: PrivateKey) -> Result<()> {
+    pub async fn create_ssh_secret(&self, key_pair: &KeyPair) -> Result<()> {
         let secret = Secret {
             metadata: ObjectMeta {
-                name: Some(name.into()),
+                name: Some(key_pair.public_key.fingerprint.to_string()),
                 ..Default::default()
             },
             string_data: Some(BTreeMap::from([(
                 "ssh-privatekey".into(),
-                private_key.to_string(),
+                key_pair.private_key.to_string(),
             )])),
             type_: Some("kubernetes.io/ssh-auth".into()),
             ..Default::default()

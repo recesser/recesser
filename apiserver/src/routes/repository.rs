@@ -1,6 +1,6 @@
 use actix_web::http::header;
 use actix_web::{delete, get, put, web, Error, HttpRequest, HttpResponse};
-use recesser_core::repository::{KeyPair, NewRepository, Repository};
+use recesser_core::repository::{NewRepository, Repository};
 use recesser_core::user::Scope;
 
 use crate::auth::middleware::validate_scope;
@@ -23,13 +23,16 @@ async fn add(
 ) -> Result<HttpResponse, Error> {
     let new_repository = new_repository.into_inner();
 
-    let fingerprint = new_repository.keypair.public_key.fingerprint.to_string();
-    let KeyPair {
-        private_key,
-        public_key,
-    } = new_repository.keypair;
+    app_state
+        .k8s_apiserver
+        .create_ssh_secret(&new_repository.keypair)
+        .await
+        .map_err(UserError::internal)?;
 
-    let repository = Repository::new(&new_repository.name, public_key);
+    let repository = Repository::new(
+        &new_repository.name,
+        new_repository.keypair.public_key.clone(),
+    );
     app_state
         .database
         .repositories
@@ -39,7 +42,7 @@ async fn add(
 
     app_state
         .secstore
-        .store_ssh_key(&fingerprint, &private_key)
+        .store_ssh_key(&new_repository.keypair)
         .await
         .map_err(UserError::internal)?;
 
