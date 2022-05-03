@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
         .map_err(|_| anyhow!("Apiserver token needs to be specified via environment"))?;
     let global = Arc::new(Global {
         apiserver: Apiserver::new(&s.apiserver_addr, &apiserver_token)?,
-        argo_workflows: ArgoWorkflowsServer::new(&s.argo_workflows_addr),
+        argo_workflows: ArgoWorkflowsServer::new(&s.argo_workflows_addr)?,
     });
 
     // Poll all repositories on an interval
