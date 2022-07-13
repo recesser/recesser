@@ -2,10 +2,31 @@
 
 **A Git-Based Automation System for Reproducible Computational Social Science Research**
 
+## Installation
+
+### CLI
+
+You need to have `ssh-keygen` installed. This is usually part of the `openssh` package.
+
+On Ubuntu OpenSSH should already be installed but if it isn't you can do it yourself with `sudo`:
+
+```
+apt install openssh
+```
+
+The actual CLI is available on crates.io and can be installed with:
+
+```sh
+cargo install recesser-cli
+```
+
+Alternatively, [precompiled binaries](https://github.com/recesser/recesser/releases) are available
+for Linux. Keep in mind tha the precompiled binaries also need ssh-keygen to be installed.
+
 ## Usage
 
-The primary mode of interaction with the system is through Git (for the source code)
-and the CLI (to manage artifacts and administer the overall system).
+The primary mode of interaction with the system is through Git (for the source code of your
+analyses) and the CLI (to manage artifacts and administer the overall system).
 
 ### CLI
 
@@ -33,36 +54,49 @@ SUBCOMMANDS:
     repository    Manage repositories
 ```
 
-## Installation
-
-### CLI
-
-```sh
-cargo install recesser-cli
-```
-
-Alternatively, [precompiled binaries](https://github.com/recesser/recesser/releases) are available
-for linux.
-
 ### Backend Infrastructure
 
 The backend infrastructure of Recesser is installed on a single Kubernetes cluster. The installation
-manifests and instructions can be found in the [Recesser
-Infrastructure](https://github.com/recesser/infrastructure) repository.
+manifests can be found in the `manifests` directory. If you configure your remote cluster, you can
+leverage skaffold to deploy the entire system in one go:
+
+```
+skaffold run
+```
 
 ## Development
 
-Start backend services with Docker Compose:
+There are three levels of local development: (1) running single components via cargo, (2) running
+all non-kubernetes-native components via docker-compose, and (3) running all components in a local
+minikube environment via skaffold.
 
-```bash
-docker compose up --detach
-```
+### Single Component
 
-Source environment variables for local development:
+You can source the environment variables for each component:
 
 ```bash
 set -a # Necessary to export all created variables when sourcing a file
 source apiserver.local.env
 source cli.local.env
 source schandler.local.env
+```
+
+Then run a single component in a shell:
+
+```
+cargo run -p recesser-apiserver
+```
+
+### Non-Kubernetes Components
+
+Start the services with Docker Compose and detach so you can still use this shell:
+
+```bash
+docker compose up --detach
+```
+
+### All Components in Local Cluster
+
+```
+skaffold run
 ```
