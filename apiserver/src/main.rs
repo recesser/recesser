@@ -69,12 +69,20 @@ async fn main() -> Result<()> {
         Err(_) => {
             let key_value = HmacKey::generate_key_value(&rng)?;
             let hmac_key = HmacKey::new(&key_value);
+
             secstore.store_hmac_key(&key_value).await?;
+
             let initial_token = Token::create(Scope::Admin, &hmac_key)?;
+
+            // Store initial token as a kubernetes secret so schandler can access Apiserver
+            // automatically. This should really generate a separate Machine token instead
+            // to avoid exposing the root token to Kubernetes.
             k8s_apiserver
                 .create_token_secret("apiserver-token", &initial_token)
                 .await?;
+
             println!("Initial token: {}", initial_token.to_string()?);
+
             hmac_key
         }
     };
