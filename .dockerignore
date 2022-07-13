@@ -5,3 +5,9 @@ Dockerfile
 *.md
 compose.yaml
 manifests/
+.git*
+.cargo/
+.github/
+.gitignore
+LICENSE
+skaffold.yaml
