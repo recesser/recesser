@@ -1,0 +1,10 @@
+mode: standalone
+persistence:
+  enabled: false
+replicas: 1
+resources:
+  requests:
+    memory:
+rootUser: "console"
+rootPassword: "console123"
+users: []

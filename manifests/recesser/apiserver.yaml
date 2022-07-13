@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: apiserver
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-handler
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: handle-secrets
+subjects:
+- kind: ServiceAccount
+  name: apiserver
+roleRef:
+  kind: Role
+  name: secret-handler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: apiserver
+  name: apiserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apiserver
+  template:
+    metadata:
+      labels:
+        app: apiserver
+    spec:
+      serviceAccountName: apiserver
+      containers:
+      - name: apiserver
+        image: recesser/apiserver
+        imagePullPolicy: IfNotPresent
+        command: ["apiserver"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: RECESSER_SECRETSTORAGE_TOKEN
+          value: vault123
+        - name: RECESSER_OBJECTSTORAGE_USER
+          value: console
+        - name: RECESSER_OBJECTSTORAGE_PASSWORD
+          value: console123
+        - name: RECESSER_LOG_LEVEL
+          value: debug
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiserver
+spec:
+  selector:
+    app: apiserver
+  ports:
+  - port: 80
+    targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: apiserver-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: recesser.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: apiserver
+            port:
+              number: 80

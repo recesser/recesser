@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: schandler
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workflow-handler
+rules:
+- apiGroups: [""]
+  resources: ["workflows.argoproj.io"]
+  verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: handle-workflows
+subjects:
+- kind: ServiceAccount
+  name: schandler
+roleRef:
+  kind: Role
+  name: workflow-handler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: schandler
+  name: schandler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: schandler
+  template:
+    metadata:
+      labels:
+        app: schandler
+    spec:
+      containers:
+      - name: schandler
+        image: recesser/schandler
+        imagePullPolicy: IfNotPresent
+        command: ["schandler"]
+        env:
+        - name: RECESSER_APISERVER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: apiserver-token
+              key: token
+        - name: RECESSER_POLLING_INTERVAL
+          value: "1"
+        - name: RECESSER_LOG_LEVEL
+          value: debug

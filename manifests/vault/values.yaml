@@ -1,0 +1,9 @@
+injector:
+  enabled: false
+server:
+  dev:
+    enabled: true
+    devRootToken: "vault123"
+  affinity: ''
+  logLevel: trace
+  updateStrategyType: RollingUpdate
