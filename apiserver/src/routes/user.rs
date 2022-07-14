@@ -16,9 +16,8 @@ async fn create(
 ) -> Result<String, Error> {
     let new_user = new_user.into_inner();
 
-    let hmac_key = app_state.hmac_key.lock().unwrap();
-    let token =
-        auth::Token::create(new_user.scope.clone(), &hmac_key).map_err(UserError::internal)?;
+    let token = auth::Token::create(new_user.scope.clone(), &app_state.hmac_key.lock().unwrap())
+        .map_err(UserError::internal)?;
 
     app_state
         .database
