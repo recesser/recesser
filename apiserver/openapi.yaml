@@ -1,0 +1,274 @@
+openapi: 3.0.0
+info:
+  title: 'Recesser Apiserver'
+  version: '1.0'
+paths:
+  /artifacts:
+    get:
+      tags:
+        - Artifacts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    put:
+      tags:
+        - Repositories
+      responses:
+        '200':
+          description: OK
+  /artifacts/{handle}:
+    delete:
+      tags:
+        - Artifacts
+      parameters:
+        - in: path
+          name: handle
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: OK
+  /artifacts/{handle}/file:
+    get:
+      tags:
+        - Artifacts
+      parameters:
+        - in: path
+          name: handle
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /artifacts/{handle}/metadata:
+    get:
+      tags:
+        - Artifacts
+      parameters:
+        - in: path
+          name: handle
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metadata'
+  /repositories:
+    get:
+      tags:
+        - Repositories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Repository'
+    put:
+      tags:
+        - Repositories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewRepository'
+        required: true
+      responses:
+        '200':
+          description: OK
+  /repositories/{organisation}/{repository}:
+    get:
+      tags:
+        - Repositories
+      parameters:
+        - in: path
+          name: organisation
+          required: true
+          schema:
+            type: string
+          style: simple
+        - in: path
+          name: repository
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repository'
+    delete:
+      tags:
+        - Repositories
+      parameters:
+        - in: path
+          name: organisation
+          required: true
+          schema:
+            type: string
+          style: simple
+        - in: path
+          name: repository
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: OK
+  /repositories/{organisation}/{repository}/credentials:
+    get:
+      tags:
+        - Repositories
+      parameters:
+        - in: path
+          name: organisation
+          required: true
+          schema:
+            type: string
+          style: simple
+        - in: path
+          name: repository
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /users:
+    get:
+      tags:
+        - Users
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk0MGU4MTliLWRmZmUtNGUwYy04NmFjLWJkMThlZDdlMmYwNCIsInNjb3BlIjoiQWRtaW4ifQ.s3zdLE-D28v1sRw5Y_p-cSc-AUz6xj9uXnGdCFJCqXI'
+    delete:
+      tags:
+        - Users
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Metadata:
+      type: object
+      properties:
+        custom:
+          type: object
+        object_handle:
+          type: string
+      required:
+        - object_handle
+    NewRepository:
+      type: object
+      properties:
+        keypair:
+          type: object
+          properties:
+            private_key:
+              type: string
+            public_key:
+              type: object
+              properties:
+                fingerprint:
+                  type: string
+                public_key:
+                  type: string
+              required:
+                - fingerprint
+                - public_key
+          required:
+            - private_key
+            - public_key
+        name:
+          type: string
+      required:
+        - keypair
+        - name
+    NewUser:
+      type: object
+      properties:
+        scope:
+          type: string
+      required:
+        - scope
+    Repository:
+      type: object
+      properties:
+        last_commit:
+          type: string
+        name:
+          type: string
+        public_key:
+          type: string
+        url:
+          type: string
+      required:
+        - last_commit
+        - name
+        - public_key
+        - url
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+      required:
+        - id
+        - scope
