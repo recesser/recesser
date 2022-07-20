@@ -2,21 +2,21 @@ apiVersion: skaffold/v2beta27
 kind: Config
 build:
   artifacts:
-  - image: recesser/apiserver
-    docker:
-      buildArgs:
-        BINARY: apiserver
-        RUST_VERSION: "{{ .RUST_VERSION }}"
-  - image: recesser/rcssr
-    docker:
+    - image: recesser/apiserver
+      docker:
+        buildArgs:
+          BINARY: apiserver
+          RUST_VERSION: '{{ .RUST_VERSION }}'
+    - image: recesser/rcssr
+      docker:
         buildArgs:
           BINARY: rcssr
-          RUST_VERSION: "{{ .RUST_VERSION }}"
-  - image: recesser/schandler
-    docker:
-      buildArgs:
-        BINARY: schandler
-        RUST_VERSION: "{{ .RUST_VERSION }}"
+          RUST_VERSION: '{{ .RUST_VERSION }}'
+    - image: recesser/schandler
+      docker:
+        buildArgs:
+          BINARY: schandler
+          RUST_VERSION: '{{ .RUST_VERSION }}'
   local:
     useDockerCLI: true
     useBuildkit: true
