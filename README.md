@@ -97,6 +97,16 @@ docker compose up --detach
 
 ### All Components in Local Cluster
 
+Set up minikube:
+
+```bash
+minikube start
+skaffold config set local-cluster true
+eval $(minikube docker-env)
 ```
+
+Build and deploy all containers
+
+```bash
 skaffold run
 ```
