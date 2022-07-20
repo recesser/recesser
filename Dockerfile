@@ -22,12 +22,12 @@ FROM chef AS builder
 ARG TARGET
 ARG BINARY
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --target ${TARGET} --recipe-path recipe.json
+RUN cargo chef cook --target ${TARGET} --recipe-path recipe.json
 COPY . .
-RUN cargo build --release --target ${TARGET} --bin ${BINARY}
+RUN cargo build --target ${TARGET} --bin ${BINARY}
 
 FROM gcr.io/distroless/${DISTROLESS_IMG}
 ARG TARGET
 ARG BINARY
 WORKDIR /usr/local/bin
-COPY --from=builder /app/target/${TARGET}/release/${BINARY} /usr/local/bin/
+COPY --from=builder /app/target/${TARGET}/debug/${BINARY} /usr/local/bin/
