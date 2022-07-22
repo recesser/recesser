@@ -7,7 +7,7 @@ use recesser_core::repository::Repository;
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
 
-use crate::pipeline::{Kind, Pipeline};
+use crate::workflow::{Kind, Workflow};
 
 use template::{construct_from_template, Template};
 
@@ -32,7 +32,7 @@ impl ArgoWorkflowsServer {
         })
     }
 
-    pub async fn submit(&self, workflow: &Workflow) -> Result<()> {
+    pub async fn submit(&self, workflow: &ArgoWorkflow) -> Result<()> {
         self.client
             .post(format!("http://{}/api/v1/workflows/argo/submit", self.addr))
             .json(workflow)
@@ -44,15 +44,15 @@ impl ArgoWorkflowsServer {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(transparent)]
-pub struct Workflow(serde_json::Value);
+pub struct ArgoWorkflow(serde_json::Value);
 
-impl Workflow {
-    pub fn from_pipeline(pipeline: Pipeline, repository: Repository) -> Result<Self> {
-        let metadata = pipeline.metadata;
-        let workflow = match pipeline.kind {
-            Kind::TemplatePipeline(pipeline) => construct_from_template(
+impl ArgoWorkflow {
+    pub fn from_workflow(workflow: Workflow, repository: Repository) -> Result<Self> {
+        let metadata = workflow.metadata;
+        let workflow = match workflow.kind {
+            Kind::TemplateWorkflow(workflow) => construct_from_template(
                 Template::TemplateWorkflow,
-                minijinja::context!(metadata, pipeline, repository),
+                minijinja::context!(metadata, workflow, repository),
             )?,
             _ => return Err(anyhow::anyhow!("CustomTemplate is not yet implemented")),
         };

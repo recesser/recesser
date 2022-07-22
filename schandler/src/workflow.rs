@@ -6,7 +6,7 @@ use crate::repository::LocalRepository;
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Pipeline {
+pub struct Workflow {
     pub api_version: String,
     pub metadata: Metadata,
     #[serde(flatten)]
@@ -21,13 +21,13 @@ pub struct Metadata {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(tag = "kind", content = "spec")]
 pub enum Kind {
-    TemplatePipeline(TemplatePipeline),
-    CustomPipeline(CustomPipeline),
+    TemplateWorkflow(TemplateWorkflow),
+    CustomWorkflow(CustomWorkflow),
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct TemplatePipeline {
+pub struct TemplateWorkflow {
     pub inputs: Option<Vec<String>>,
     pub template: Template,
     pub dependencies: Option<String>,
@@ -44,7 +44,7 @@ pub struct Template {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct CustomPipeline {
+pub struct CustomWorkflow {
     pub inputs: Vec<String>,
     pub image: Option<String>,
     pub build: Option<String>,
@@ -53,7 +53,7 @@ pub struct CustomPipeline {
     pub working_dir: Option<String>,
 }
 
-impl Pipeline {
+impl Workflow {
     pub async fn from_repo(repo: &LocalRepository) -> Result<Self> {
         let workflow_path = repo.path.join("recesser.yaml");
         if !workflow_path.exists() {

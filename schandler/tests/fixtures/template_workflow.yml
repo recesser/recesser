@@ -1,10 +1,13 @@
 apiVersion: v1
-kind: CustomPipeline
+kind: TemplateWorkflow
 metadata:
   name: twitter-2016
 spec:
   inputs:
     - AQExRKu0RUToW4g-jgmhVDuvDzpRpHgkjIsB6ZXpu_JwBA
     - AQEUo_pBYYItKCM2TI29WFfh-wi7kkyKGcbS-xDlUexpZw
-  build: ./Dockerfile
-  entrypoint: [ main.py ]
+  template:
+    name: python
+    version: 1.0.0
+  dependencies: requirements.txt
+  entrypoint: main.py

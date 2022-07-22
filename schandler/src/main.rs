@@ -9,10 +9,10 @@ use recesser_core::repository::Repository;
 use tracing_subscriber::filter::LevelFilter;
 
 use recesser_schandler::apiserver::Apiserver;
-use recesser_schandler::argo_workflows::{ArgoWorkflowsServer, Workflow};
-use recesser_schandler::pipeline::Pipeline;
+use recesser_schandler::argo_workflows::{ArgoWorkflow, ArgoWorkflowsServer};
 use recesser_schandler::repository::LocalRepository;
 use recesser_schandler::settings::Settings;
+use recesser_schandler::workflow::Workflow;
 
 struct Global {
     apiserver: Apiserver,
@@ -88,9 +88,9 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
         new_commit_id = %local_repository.last_commit
     );
 
-    let pipeline = Pipeline::from_repo(&local_repository).await?;
-    let workflow = Workflow::from_pipeline(pipeline, repository)?;
-    g.argo_workflows.submit(&workflow).await?;
+    let workflow = Workflow::from_repo(&local_repository).await?;
+    let argo_workflow = ArgoWorkflow::from_workflow(workflow, repository)?;
+    g.argo_workflows.submit(&argo_workflow).await?;
 
     tracing::info!(message = "Successfully polled repository");
     Ok(())

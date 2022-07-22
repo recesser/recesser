@@ -5,14 +5,14 @@ metadata:
 spec:
   entrypoint: steps
   templates:
-    {% if pipeline.inputs %}
+    {% if workflow.inputs %}
     - name: download_artifacts
       container:
         image: "recesser/cli:0.1.0"
         command:
           - rcssr 
           - download
-          {% for i in pipeline.inputs %}
+          {% for i in workflow.inputs %}
           - {{ i }}
           {% endfor %}
     {% endif %}
@@ -28,13 +28,13 @@ spec:
                 key: ssh-private-key
               depth: 0
       container:
-        image: "recesser/{{ pipeline.template.name }}-template:{{ pipeline.template.version }}"
+        image: "recesser/{{ workflow.template.name }}-template:{{ workflow.template.version }}"
         args:
-          - {{ pipeline.dependencies }}
-          - {{ pipeline.entrypoint }}
+          - {{ workflow.dependencies }}
+          - {{ workflow.entrypoint }}
     - name: steps
       steps:
-        {% if pipeline.inputs %}
+        {% if workflow.inputs %}
         - - name: Download Artifacts Step
             template: download_artifacts
         {% endif %}
