@@ -3,4 +3,5 @@ kind: Kustomization
 namespace: argo
 resources:
 - namespace.yaml
+- rbac.yaml
 - https://github.com/argoproj/argo-workflows/releases/download/v3.3.4/quick-start-postgres.yaml
