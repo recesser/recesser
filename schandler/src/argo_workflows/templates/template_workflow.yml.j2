@@ -24,7 +24,7 @@ spec:
               repo: {{ repository.url }}
               revision: HEAD
               sshPrivateKeySecret:
-                name: {{ repository.public_key.fingerprint }}
+                name: {{ repository.ssh_key_fingerprint }}
                 key: ssh-private-key
               depth: 0
       container:

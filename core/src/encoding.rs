@@ -20,3 +20,16 @@ pub mod base64 {
         Ok(base64::decode_config(input, CONFIG)?)
     }
 }
+
+pub mod hex {
+    use anyhow::Result;
+    use std::fmt::Write;
+
+    pub fn encode_str(s: &str) -> Result<String> {
+        let mut buf = String::new();
+        for &byte in s.as_bytes() {
+            write!(&mut buf, "{:x}", byte)?
+        }
+        Ok(buf)
+    }
+}

@@ -3,6 +3,7 @@ mod template;
 use std::fs;
 
 use anyhow::Result;
+use recesser_core::encoding::hex;
 use recesser_core::repository::Repository;
 use reqwest::{header, Client};
 use serde::{Deserialize, Serialize};
@@ -52,7 +53,15 @@ impl ArgoWorkflow {
         let workflow = match workflow.kind {
             Kind::TemplateWorkflow(workflow) => construct_from_template(
                 Template::TemplateWorkflow,
-                minijinja::context!(metadata, workflow, repository),
+                minijinja::context!(
+                    metadata,
+                    workflow,
+                    repository => minijinja::context!(
+                        name => repository.name,
+                        url => repository.url,
+                        ssh_key_fingerprint => hex::encode_str(&repository.public_key.fingerprint.to_string())?
+                    )
+                ),
             )?,
             _ => return Err(anyhow::anyhow!("CustomTemplate is not yet implemented")),
         };
