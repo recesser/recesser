@@ -19,3 +19,25 @@ roleRef:
   kind: Role
   name: secret-handler
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workflow-handler
+rules:
+- apiGroups: ['']
+  resources: ['workflows.argoproj.io']
+  verbs: ['update']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: handle-workflows
+subjects:
+- kind: ServiceAccount
+  name: schandler
+  namespace: recesser
+roleRef:
+  kind: Role
+  name: workflow-handler
+  apiGroup: rbac.authorization.k8s.io

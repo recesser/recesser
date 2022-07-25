@@ -6,7 +6,7 @@ spec:
   entrypoint: steps
   templates:
     {% if workflow.inputs %}
-    - name: download_artifacts
+    - name: download-artifacts
       container:
         image: "recesser/cli:0.1.0"
         command:
@@ -15,11 +15,18 @@ spec:
           {% for i in workflow.inputs %}
           - {{ i }}
           {% endfor %}
+        outputs:
+          artifacts:
+            {% for i in workflow.inputs %}
+            - name: {{ i }}
+              from: {{ i }}
+            {% endfor %}
     {% endif %}
     - name: main
       inputs:
         artifacts:
           - name: source-code
+            path: /src
             git:
               repo: {{ repository.url }}
               revision: HEAD
@@ -27,16 +34,35 @@ spec:
                 name: {{ repository.ssh_key_fingerprint }}
                 key: ssh-private-key
               depth: 0
+          {% if workflow.inputs %}
+          {% for i in workflow.inputs %}
+          - name: {{ i }}
+            path: "/tmp/{{ i }}"
+          {% endfor %}
+          {% endif %}
       container:
         image: "recesser/{{ workflow.template.name }}-template:{{ workflow.template.version }}"
         args:
           - {{ workflow.dependencies }}
           - {{ workflow.entrypoint }}
+          {% if workflow.inputs %}
+          {% for i in workflow.inputs %}
+          - "/tmp/{{ i }}"
+          {% endfor %}
+          {% endif %}
     - name: steps
       steps:
         {% if workflow.inputs %}
-        - - name: Download Artifacts Step
-            template: download_artifacts
+        - - name: download-artifacts-step
+            template: download-artifacts
         {% endif %}
-        - - name: Main Step
+        - - name: main-step
             template: main
+            {% if workflow.inputs %}
+            arguments:
+              artifacts:
+              {% for i in workflow.inputs %}
+              - name: {{ i }}
+                from: "{{"{{"}}steps.download-artifacts-step.outputs.artifacts.{{i}}{{"}}"}}"
+              {% endfor %}
+            {% endif %}

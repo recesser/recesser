@@ -26,7 +26,9 @@ impl ArgoWorkflowsServer {
         let token = fs::read_to_string(TOKEN_PATH)?;
         let mut headers = header::HeaderMap::new();
         headers.insert(header::AUTHORIZATION, format!("Bearer {token}").try_into()?);
-        let cb = Client::builder().default_headers(headers);
+        let cb = Client::builder()
+            .default_headers(headers)
+            .danger_accept_invalid_certs(true);
         Ok(Self {
             addr: String::from(addr),
             client: cb.build()?,
@@ -34,11 +36,14 @@ impl ArgoWorkflowsServer {
     }
 
     pub async fn submit(&self, workflow: &ArgoWorkflow) -> Result<()> {
-        self.client
-            .post(format!("http://{}/api/v1/workflows/argo/submit", self.addr))
-            .json(workflow)
+        tracing::debug!(message = "Submitting workflow", workflow = ?workflow);
+        let result = self
+            .client
+            .post(format!("{}/api/v1/workflows/argo", self.addr))
+            .json(&serde_json::json!({ "namespace": "argo", "serverDryRun": false, "workflow": workflow }))
             .send()
             .await?;
+        tracing::debug!(message = "Result from argo", result = ?result);
         Ok(())
     }
 }
