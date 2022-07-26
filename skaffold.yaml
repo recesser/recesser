@@ -23,6 +23,7 @@ build:
   tagPolicy:
     inputDigest: {}
 deploy:
+  statusCheck: false
   kustomize:
     buildArgs: [--enable-helm]
     paths:
