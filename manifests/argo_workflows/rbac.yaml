@@ -25,9 +25,9 @@ kind: Role
 metadata:
   name: workflow-handler
 rules:
-- apiGroups: ['']
-  resources: ['workflows.argoproj.io']
-  verbs: ['update']
+- apiGroups: ['argoproj.io']
+  resources: ['workflows']
+  verbs: ['create', 'update']
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

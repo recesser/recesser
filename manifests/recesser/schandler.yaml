@@ -19,6 +19,7 @@ spec:
       labels:
         app: schandler
     spec:
+      serviceAccountName: schandler
       containers:
       - name: schandler
         image: recesser/schandler
