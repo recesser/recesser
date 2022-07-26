@@ -6,8 +6,13 @@ set -euo pipefail
 # to provide a GitHub personal access token that can add deploy keys to the 
 # the repostiory as the environemnt variable GITHUB_TOKEN
 repository=$1
+
+# Variables
 host="http:/localhost:8080"
 input_data="aclImdb_v1.tar.gz"
+
+# Environment variables
+export RUST_VERSION=1.62
 
 get_token() {
     kubectl get \
@@ -36,6 +41,14 @@ register_repo() {
         add \
         "${repository}"
 }
+
+# Remove old resources because deployment expects fresh cluster
+skaffold delete
+sleep 5 # Wait for resources to be delete
+
+# Deploy
+skaffold run
+sleep 30 # Wait for deployment to stabilize
 
 # Get initial Receesser apiserver token
 token=$(get_token)
