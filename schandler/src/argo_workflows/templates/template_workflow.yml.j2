@@ -15,12 +15,12 @@ spec:
           {% for i in workflow.inputs %}
           - {{ i }}
           {% endfor %}
-        outputs:
-          artifacts:
-            {% for i in workflow.inputs %}
-            - name: {{ i }}
-              from: {{ i }}
-            {% endfor %}
+      outputs:
+        artifacts:
+          {% for i in workflow.inputs %}
+          - name: {{ i }}
+            path: {{ i }}
+          {% endfor %}
     {% endif %}
     - name: main
       inputs:
