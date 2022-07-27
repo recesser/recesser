@@ -55,6 +55,15 @@ pub struct ArgoWorkflow(serde_json::Value);
 impl ArgoWorkflow {
     pub fn from_workflow(workflow: Workflow, repository: Repository) -> Result<Self> {
         let metadata = workflow.metadata;
+        // Mostly an ugly hack to keep to the Kubernetes constraint of volume names not being
+        // allowed to exceed 63 characters
+        let short_fingerprint: String = repository
+            .public_key
+            .fingerprint
+            .to_string()
+            .chars()
+            .take(20)
+            .collect();
         let workflow = match workflow.kind {
             Kind::TemplateWorkflow(workflow) => construct_from_template(
                 Template::TemplateWorkflow,
@@ -64,7 +73,7 @@ impl ArgoWorkflow {
                     repository => minijinja::context!(
                         name => repository.name,
                         url => repository.url,
-                        ssh_key_fingerprint => hex::encode_str(&repository.public_key.fingerprint.to_string())?
+                        ssh_key_fingerprint => hex::encode_str(&short_fingerprint)?
                     )
                 ),
             )?,

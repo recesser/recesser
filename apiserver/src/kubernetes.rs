@@ -26,7 +26,16 @@ impl KubernetesApiserver {
     }
 
     pub async fn create_ssh_secret(&self, key_pair: &KeyPair) -> Result<()> {
-        let secret_name = hex::encode_str(&key_pair.public_key.fingerprint.to_string())?;
+        // Mostly an ugly hack to keep to the Kubernetes constraint of volume names not being
+        // allowed to exceed 63 characters
+        let short_fingerprint: String = key_pair
+            .public_key
+            .fingerprint
+            .to_string()
+            .chars()
+            .take(20)
+            .collect();
+        let secret_name = hex::encode_str(&short_fingerprint)?;
         let secret = Secret {
             metadata: ObjectMeta {
                 name: Some(secret_name),
@@ -53,6 +62,7 @@ impl KubernetesApiserver {
             ..Default::default()
         };
         self.create_recesser_secret(&secret).await?;
+        self.create_argo_secret(&secret).await?;
         Ok(())
     }
 

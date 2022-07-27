@@ -8,9 +8,19 @@ spec:
     {% if workflow.inputs %}
     - name: download-artifacts
       container:
-        image: "recesser/cli:0.1.0"
+        image: "recesser/rcssr"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RECESSER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: apiserver-token
+              key: token
+        - name: RECESSER_ADDR
+          value: 'http://apiserver.recesser'
         command:
-          - rcssr 
+          - rcssr
+          - artifact
           - download
           {% for i in workflow.inputs %}
           - {{ i }}
@@ -19,7 +29,7 @@ spec:
         artifacts:
           {% for i in workflow.inputs %}
           - name: {{ i }}
-            path: {{ i }}
+            path: /usr/local/bin/{{ i }}
           {% endfor %}
     {% endif %}
     - name: main
@@ -32,7 +42,7 @@ spec:
               revision: HEAD
               sshPrivateKeySecret:
                 name: {{ repository.ssh_key_fingerprint }}
-                key: ssh-private-key
+                key: ssh-privatekey
               depth: 0
           {% if workflow.inputs %}
           {% for i in workflow.inputs %}
@@ -42,7 +52,9 @@ spec:
           {% endif %}
       container:
         image: "recesser/{{ workflow.template.name }}-template:{{ workflow.template.version }}"
-        args:
+        command:
+          - bash
+          - entrypoint.sh
           - {{ workflow.dependencies }}
           - {{ workflow.entrypoint }}
           {% if workflow.inputs %}
