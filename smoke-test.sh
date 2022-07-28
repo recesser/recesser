@@ -9,7 +9,7 @@ repository=$1
 
 # Variables
 host="http:/localhost:8080"
-input_data="aclImdb_v1.tar.gz"
+input_data="/tmp/aclImdb_v1.tar.gz"
 
 # Environment variables
 export RUST_VERSION=1.62
@@ -66,7 +66,7 @@ if [[ ! -f "${input_data}" ]]; then
     wget http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz -O "${input_data}"
 fi
 # Check integrity of data
-checksum="c40f74a18d3b61f90feba1e17730e0d38e8b97c05fde7008942e91923d1658fe  aclImdb_v1.tar.gz"
+checksum="c40f74a18d3b61f90feba1e17730e0d38e8b97c05fde7008942e91923d1658fe  ${input_data}"
 echo "${checksum}" | sha256sum --check --status
 
 # Upload data
