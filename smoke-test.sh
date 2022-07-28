@@ -47,10 +47,16 @@ skaffold delete
 echo "Waiting for 5 seconds for resources to be deleted"
 sleep 5 # Wait for resources to be delete
 
+# Build template-executors
+eval $(minikube docker-env)
+pushd template-executors/python-tensorflow
+make VERSION=1.0.0
+popd
+
 # Deploy
 skaffold run
-echo "Waiting for 30 seconds for deployment to stabilize"
-sleep 30 # Wait for deployment to stabilize
+echo "Waiting for 40 seconds for deployment to stabilize"
+sleep 40 # Wait for deployment to stabilize
 
 # Get initial Receesser apiserver token
 token=$(get_token)
@@ -86,5 +92,3 @@ curl \
     --header "Accept: application/vnd.github+json" \
     --header "Authorization: token ${GITHUB_TOKEN}" \
     --data "{\"title\": \"RecesserMachineKey\",\"key\":\"${ssh_key}\",\"read_only\":true}"
-    
-    
