@@ -20,7 +20,6 @@ build:
   local:
     useDockerCLI: true
     useBuildkit: true
-    concurrency: 0 # no limit on how many artifacts are built concurrently
   tagPolicy:
     sha256: {}
 deploy:
