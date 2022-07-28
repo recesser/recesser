@@ -44,10 +44,12 @@ register_repo() {
 
 # Remove old resources because deployment expects fresh cluster
 skaffold delete
+echo "Waiting for 5 seconds for resources to be deleted"
 sleep 5 # Wait for resources to be delete
 
 # Deploy
 skaffold run
+echo "Waiting for 30 seconds for deployment to stabilize"
 sleep 30 # Wait for deployment to stabilize
 
 # Get initial Receesser apiserver token
