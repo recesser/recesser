@@ -1,6 +1,11 @@
 # Recesser
 
-**A Git-Based Automation System for Reproducible Computational Social Science Research**
+**A Git-Based Automation System for Reproducible Computational Social Science Research Running on
+Kubernetes**
+
+1. [Installation](#installation)
+2. [Usage](#usage)
+3. [Development](#development)
 
 ## Installation
 
@@ -107,10 +112,11 @@ To run the smoke test, you need to have these dependencies installed:
 - skaffold
 
 You can run the smoke test with any repository that contains a valid workflow description
-(`recesser.yaml`). However, I only ran the test with the `recesser/tensorflow-example` repository.
-To reproduce this, fork this repo and create a GitHub Personal Access Token with access to that
-private fork. Provide that token as an environment variable. The name of the repository needs to be
-provided in the GitHub `{owner}/{repository}` format (e.g. `recesser/tensorflow-example`).
+(`recesser.yaml`). However, I only ran the test with the
+`[recesser/tensorflow-example](https://github.com/recesser/tensorflow-example)` repository. To
+reproduce this, fork this repo and create a GitHub Personal Access Token with access to that private
+fork. Provide that token as an environment variable. The name of the repository needs to be provided
+in the GitHub `{owner}/{repository}` format (e.g. `recesser/tensorflow-example`).
 
 Then run:
 
