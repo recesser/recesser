@@ -22,6 +22,23 @@ impl RepositoryStore {
         Ok(())
     }
 
+    pub async fn update_last_commit(&self, name: &str, new_commit: &str) -> Result<()> {
+        tracing::debug!(
+            message = "Updating last commit of repository",
+            repository = name,
+            new_commit = new_commit
+        );
+        self.collection
+            .find_one_and_update(
+                bson::doc! {"name": name},
+                bson::doc! {"$set": {"last_commit": new_commit}},
+                None,
+            )
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn list(&self) -> Result<Vec<Repository>> {
         let cursor = self.collection.find(None, None).await?;
         let repositories: Vec<Repository> = cursor.try_collect().await?;

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use recesser_core::repository::Repository;
+use recesser_core::repository::{CommitID, Repository};
 use reqwest::{header, Client, Response};
 
 pub struct Apiserver {
@@ -30,6 +30,17 @@ impl Apiserver {
         let body = check_body(resp).await?;
         let repos: Vec<Repository> = serde_json::from_slice(&body)?;
         Ok(repos)
+    }
+
+    pub async fn update_last_commit(&self, name: &str, new_commit: &CommitID) -> Result<()> {
+        let resp = self
+            .client
+            .put(self.url(&format!("/repositories/{name}/last-commit")))
+            .body(new_commit.to_string())
+            .send()
+            .await?;
+        check_body(resp).await?;
+        Ok(())
     }
 
     pub async fn get_ssh_key(&self, name: &str) -> Result<String> {

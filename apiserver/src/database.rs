@@ -46,7 +46,7 @@ impl DocumentNotFoundError {
     pub fn downcast(e: Error, path: &str) -> UserError {
         match e.downcast::<Self>() {
             Ok(e) => UserError::not_found(path, e),
-            Err(_) => UserError::Internal,
+            Err(e) => UserError::internal(e),
         }
     }
 }

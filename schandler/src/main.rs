@@ -75,6 +75,9 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
     let local_repository = LocalRepository::from_remote(&repository.url, &private_key)?;
     tracing::info!(message = "Cloned repository from remote");
 
+    // Compare last commit in database to actual last commit from cloned repository
+    // Only submit workflow if the commit has changed.
+    // When change was detected, update the last commit in the database
     if repository.last_commit == local_repository.last_commit {
         tracing::info!(
             message = "Last commit of repository has not changed",
@@ -87,6 +90,9 @@ async fn poll_repository(g: Arc<Global>, repository: Repository) -> Result<()> {
         old_commit_id = %repository.last_commit,
         new_commit_id = %local_repository.last_commit
     );
+    g.apiserver
+        .update_last_commit(&repository.name, &local_repository.last_commit)
+        .await?;
 
     let workflow = Workflow::from_repo(&local_repository).await?;
     let argo_workflow = ArgoWorkflow::from_workflow(workflow, repository)?;

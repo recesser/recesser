@@ -10,6 +10,7 @@ use crate::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(add)
+        .service(update_last_commit)
         .service(list)
         .service(show)
         .service(credentials)
@@ -45,6 +46,24 @@ async fn add(
         .store_ssh_key(&new_repository.keypair)
         .await
         .map_err(UserError::internal)?;
+
+    Ok(HttpResponse::Ok().into())
+}
+
+#[put("/{organisation}/{repository}/last-commit")]
+async fn update_last_commit(
+    path: web::Path<(String, String)>,
+    body: String,
+    app_state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let name = extract_name(path);
+
+    app_state
+        .database
+        .repositories
+        .update_last_commit(&name, &body)
+        .await
+        .map_err(|e| DocumentNotFoundError::downcast(e, &format!("/repositories/{name}")))?;
 
     Ok(HttpResponse::Ok().into())
 }
