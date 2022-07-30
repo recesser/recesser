@@ -28,6 +28,22 @@ cargo install recesser-cli
 Alternatively, [pre-compiled binaries](https://github.com/recesser/recesser/releases) are available
 for Linux. Keep in mind tha the pre-compiled binaries also need ssh-keygen to be installed.
 
+### Backend Infrastructure
+
+The backend infrastructure of Recesser is installed onto a single Kubernetes cluster. The
+installation manifests can be found in the `manifests` directory. You can leverage skaffold to
+deploy the entire system in one go. You need to set the version of Rust and of the template
+executors as environment variables before you can run skaffold:
+
+```bash
+export RUST_VERSION=1.62
+export TEMPLATE_EXECUTORS_VERSION=1.0.0
+skaffold run
+```
+
+If you want to deploy to a remote cluster you also need to [configure the remote image
+repository](https://skaffold.dev/docs/environment/image-registries/) skaffold should push to.
+
 ## Usage
 
 The primary mode of interaction with the system is through Git (for the source code of your
@@ -59,16 +75,6 @@ SUBCOMMANDS:
     repository    Manage repositories
 ```
 
-### Backend Infrastructure
-
-The backend infrastructure of Recesser is installed on a single Kubernetes cluster. The installation
-manifests can be found in the `manifests` directory. If you configure your remote cluster, you can
-leverage skaffold to deploy the entire system in one go:
-
-```bash
-skaffold run
-```
-
 ## Development
 
 The entire system can be run in a local local minikube cluster via skaffold. You need to have
@@ -80,15 +86,18 @@ First, start minikube. The system is only tested on Kubernetes `v1.24.1`.
 minikube start --kubernetes-version=v1.24.1
 ```
 
-Then, build and deploy all containers defined in the `manifests` directory. Skaffold will
-automatically detect that your kubectl config points to minikube and deploy to it:
+Then, build all containers and deploy all manifests defined in the `manifests` directory. Skaffold
+will automatically detect that your kubectl config points to a local minikube cluster and deploy to
+it. Make sure to add the Rust version and template executors version as environment variables:
 
 ```bash
+export RUST_VERSION=1.62
+export TEMPLATE_EXECUTORS_VERSION=1.0.0
 skaffold run
 ```
 
-To run the CLI locally, you can directly compile it. You need to have the Rust toolchain installed
-for this:
+To run the CLI locally, you can compile it from the source code. You need to have the Rust toolchain
+installed for this:
 
 ```bash
 cargo run -p recesser-cli -- help
@@ -98,11 +107,11 @@ cargo run -p recesser-cli -- help
 
 This repository contains a smoke test script that
 
-- Removes old deployments
-- Freshly deploys the entire system incl. the template executors
-- Uploads a public dataset as an artifact
-- Registers a custom repository
-- Executes the workflow described in the repository
+- removes old deployments
+- freshly deploys the entire system incl. the template executors
+- uploads a public dataset as an artifact
+- registers a custom repository
+- executes the workflow described in the repository
 
 To run the smoke test, you need to have these dependencies installed:
 
