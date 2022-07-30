@@ -13,6 +13,7 @@ input_data="/tmp/aclImdb_v1.tar.gz"
 
 # Environment variables
 export RUST_VERSION=1.62
+export TEMPLATE_EXECUTORS_VERSION=1.0.0
 
 get_token() {
     kubectl get \
@@ -46,12 +47,6 @@ register_repo() {
 skaffold delete
 echo "Waiting for 5 seconds for resources to be deleted"
 sleep 5 # Wait for resources to be delete
-
-# Build template-executors
-eval $(minikube docker-env)
-pushd template-executors/python-tensorflow
-make VERSION=1.0.0
-popd
 
 # Deploy
 skaffold run

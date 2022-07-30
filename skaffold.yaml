@@ -1,5 +1,7 @@
 apiVersion: skaffold/v2beta27
 kind: Config
+metadata:
+  name: backend-infrastructure
 build:
   artifacts:
     - image: recesser/apiserver
@@ -32,3 +34,19 @@ deploy:
       - manifests/mongo
       - manifests/recesser
       - manifests/vault
+---
+apiVersion: skaffold/v2beta27
+kind: Config
+metadata:
+  name: template-executors
+build:
+  artifacts:
+    - image: recesser/python-tensorflow-template
+      context: template-executors/python-tensorflow
+      docker: {}
+  local:
+    useDockerCLI: true
+    useBuildkit: true
+  tagPolicy:
+    envTemplate:
+      template: "{{.TEMPLATE_EXECUTORS_VERSION}}"
