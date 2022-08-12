@@ -9,6 +9,9 @@ Kubernetes**
 
 ## Installation
 
+First, clone this repository. The rest of the steps assume, you are in the root of the cloned
+repository.
+
 ### CLI
 
 You need to have `ssh-keygen` installed. This is usually part of the `openssh` package.
@@ -19,14 +22,14 @@ On Ubuntu, OpenSSH should already be installed but if it isn't you can do it you
 apt install openssh
 ```
 
-The actual CLI is available on crates.io and can be installed with:
+The actual CLI can be compiled with:
 
 ```bash
-cargo install recesser-cli
+cargo build -p recesser-cli --release
 ```
 
-Alternatively, [pre-compiled binaries](https://github.com/recesser/recesser/releases) are available
-for Linux. Keep in mind tha the pre-compiled binaries also need ssh-keygen to be installed.
+The resulting binary can then be found in the `target/` directory:
+`target/x86_64-unknown-linux-gnu/release/rcssr`.
 
 ### Backend Infrastructure
 
