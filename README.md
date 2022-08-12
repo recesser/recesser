@@ -9,8 +9,8 @@ Kubernetes**
 
 ## Installation
 
-First, clone this repository. The rest of the steps assume, you are in the root of the cloned
-repository.
+First, clone this repository. The rest of the steps assume that you are in the root directory of the
+cloned repository.
 
 ### CLI
 
