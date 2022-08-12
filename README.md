@@ -3,9 +3,22 @@
 **A Git-Based Automation System for Reproducible Computational Social Science Research Running on
 Kubernetes**
 
-1. [Installation](#installation)
-2. [Usage](#usage)
-3. [Development](#development)
+## Contents
+
+1. [Dependencies](#dependencies)
+2. [Installation](#installation)
+3. [Usage](#usage)
+4. [Development](#development)
+
+## Dependencies
+
+You need to have these dependencies installed:
+
+- OpenSSH
+- Rust toolchain
+- Minikube
+- Skaffold
+- Kubectl
 
 ## Installation
 
@@ -14,15 +27,7 @@ cloned repository.
 
 ### CLI
 
-You need to have `ssh-keygen` installed. This is usually part of the `openssh` package.
-
-On Ubuntu, OpenSSH should already be installed but if it isn't you can do it yourself with `sudo`:
-
-```bash
-apt install openssh
-```
-
-The actual CLI can be compiled with:
+The CLI can be compiled with:
 
 ```bash
 cargo build -p recesser-cli --release
@@ -80,8 +85,7 @@ SUBCOMMANDS:
 
 ## Development
 
-The entire system can be run in a local local minikube cluster via skaffold. You need to have
-`minikube` and `skaffold` installed on your machine.
+The entire system can be run in a local local minikube cluster via skaffold.
 
 First, start minikube. The system is only tested on Kubernetes `v1.24.1`.
 
@@ -99,8 +103,7 @@ export TEMPLATE_EXECUTORS_VERSION=1.0.0
 skaffold run
 ```
 
-To run the CLI locally, you can compile it from the source code. You need to have the Rust toolchain
-installed for this:
+You can run the CLI directly from the source code.
 
 ```bash
 cargo run -p recesser-cli -- help
@@ -115,13 +118,6 @@ This repository contains a smoke test script that
 - uploads a public dataset as an artifact
 - registers a custom repository
 - executes the workflow described in the repository
-
-To run the smoke test, you need to have these dependencies installed:
-
-- Rust toolchain
-- minikube
-- kubectl
-- skaffold
 
 You can run the smoke test with any repository that contains a valid workflow description
 (`recesser.yaml`). However, I only ran the test with the
